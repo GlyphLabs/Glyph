@@ -371,4 +371,4 @@ class VoteButtons(View):
             )
         )
 
-bot.run("ODQ5ODIzNzA3NDI5OTk0NTE3.GF2_ps.u_9RDV8nInphLgPVBhRTz2Zm9My_8hmPCKrgGE")
+bot.run("token")
