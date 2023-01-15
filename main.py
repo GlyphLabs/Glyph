@@ -8,6 +8,7 @@ import os
 import asyncio
 import datetime
 import math
+import ast
 
 import aiosqlite
 import aiofiles
@@ -19,7 +20,51 @@ intents.message_content = True
 bot = commands.Bot(intents=intents)
 bot.remove_command("help")
 bot.reaction_roles = []
+#bot.multiplier = 1
 
+"""
+async def initialize():
+    await bot.wait_until_ready()
+    bot.db = await aiosqlite.connect("expData.db")
+    await bot.db.execute("CREATE TABLE IF NOT EXISTS guildData (guild_id int, user_id int, exp int, PRIMARY KEY (guild_id, user_id))")
+"""
+@bot.event
+async def on_ready():
+    print("PurpBot is online!")
+    await bot.change_presence(activity=discord.Game("/info"))
+    bot.db = await aiosqlite.connect("DataBases/warns.db")
+    await asyncio.sleep(3)
+    async with bot.db.cursor() as cursor:
+      await cursor.execute("CREATE TABLE IF NOT EXISTS warns(user INTEGER, reason TEXT, time INTEGER, guild INTEGER)")
+    
+    async with aiofiles.open("reaction_roles.txt", mode="a") as temp:
+        pass
+        
+    async with aiofiles.open("reaction_roles.txt", mode="r") as file:
+        lines = await file.readlines()
+        for line in lines:
+            data = line.split(" ")
+            bot.reaction_roles.append((int(data[0]), int(data[1]), data[2].strip("\n")))
+"""   
+@bot.event
+async def on_message(message):
+    if not message.author.bot:
+        cursor = await bot.db.execute("INSERT OR IGNORE INTO guildData (guild_id, user_id, exp) VALUES (?,?,?)", (message.guild.id, message.author.id, 1)) 
+
+        if cursor.rowcount == 0:
+            await bot.db.execute("UPDATE guildData SET exp = exp + 1 WHERE guild_id = ? AND user_id = ?", (message.guild.id, message.author.id))
+            cur = await bot.db.execute("SELECT exp FROM guildData WHERE guild_id = ? AND user_id = ?", (message.guild.id, message.author.id))
+            data = await cur.fetchone()
+            exp = data[0]
+            lvl = math.sqrt(exp) / bot.multiplier
+        
+            if lvl.is_integer():
+                await message.channel.send(f"{message.author.mention} well done! You're now level: {int(lvl)}.")
+
+        await bot.db.commit()
+
+    await bot.process_commands(message)
+"""
 @bot.event
 async def on_command_error(ctx, error):
   if isinstance(error, MissingPermissions):
@@ -40,24 +85,6 @@ async def on_message(message):
     )
     await message.channel.send(embed=embed)
   return
-
-@bot.event
-async def on_ready():
-    print("PurpBot is online!")
-    await bot.change_presence(activity=discord.Game("/info"))
-    bot.db = await aiosqlite.connect("DataBases/warns.db")
-    await asyncio.sleep(3)
-    async with bot.db.cursor() as cursor:
-      await cursor.execute("CREATE TABLE IF NOT EXISTS warns(user INTEGER, reason TEXT, time INTEGER, guild INTEGER)")
-    
-    async with aiofiles.open("reaction_roles.txt", mode="a") as temp:
-        pass
-        
-    async with aiofiles.open("reaction_roles.txt", mode="r") as file:
-        lines = await file.readlines()
-        for line in lines:
-            data = line.split(" ")
-            bot.reaction_roles.append((int(data[0]), int(data[1]), data[2].strip("\n")))
 
 async def addwarn(ctx, reason, user):
   async with bot.db.cursor() as cursor:
@@ -243,7 +270,7 @@ async def _help(ctx):
     color=0x6B74C7
   )
   embed.add_field(name="Moderation", value="`/ban`, `/kick`, `/warn`, `/unwarn`", inline=False)
-  embed.add_field(name="Extra", value="`/hug`, `/secret`, `/send`, `/embed`, `/poll`, `/vote`", inline=False)
+  embed.add_field(name="Utility", value="`/hug`, `/secret`, `/send`, `/embed`, `/poll`, `/vote`, `/reactionroles`, `/userinfo`, `/calc`", inline=False)
   embed.add_field(name="Information", value="`/ping`, `/warns`, `serverinfo`, `/membercount`, `/guildcount`, `/invite`", inline=False)
   await ctx.respond(embed=embed)
 
@@ -354,7 +381,84 @@ async def calculate(ctx, num1: Option(str), operation: Option(str, choices=["+",
     else:
         var = f'{num1} {operation} {num2}'
         await ctx.respond(f'{var} = {eval(var)}')
-    
+
+@bot.slash_command(name="userinfo", description="Get information on a user")
+async def userinfo(ctx, member: Option(discord.Member, required=False)):
+    if member is None:
+        member = ctx.author
+    date_format = "%a, %d %b %Y %I:%M %p"
+    embed = discord.Embed(color=0x6B74C7, description=member.mention)
+    embed.set_author(name=str(member), icon_url=member.avatar.url)
+    embed.set_thumbnail(url=member.avatar.url)
+    embed.add_field(name="Joined", value=member.joined_at.strftime(date_format))
+    members = sorted(ctx.guild.members, key=lambda m: m.joined_at)
+    embed.add_field(name="Join position", value=str(members.index(member)+1))
+    embed.add_field(name="Registered", value=member.created_at.strftime(date_format))
+    if len(member.roles) > 1:
+        role_string = ' '.join([r.mention for r in member.roles][1:])
+        embed.add_field(name="Roles [{}]".format(len(member.roles)-1), value=role_string, inline=False)
+    perm_string = ', '.join([str(p[0]).replace("_", " ").title() for p in member.guild_permissions if p[1]])
+    embed.add_field(name="Guild permissions", value=perm_string, inline=False)
+    embed.set_footer(text='ID: ' + str(member.id))
+    await ctx.respond(embed=embed)
+"""
+@bot.slash_command(name="rank", description="View your rank on the bot")
+async def stats(ctx, member: Option(discord.Member)):
+    if member is None:
+        member = ctx.author
+    async with bot.db.execute("SELECT exp FROM guildData WHERE guild_id = ? AND user_id = ?", (ctx.guild.id, member.id)) as cursor:
+        data = await cursor.fetchone()
+        exp = data[0]
+    async with bot.db.execute("SELECT exp FROM guildData WHERE guild_id = ?", (ctx.guild.id,)) as cursor:
+        rank = 1
+        async for value in cursor:
+            if exp < value[0]:
+                rank += 1
+    lvl = int(math.sqrt(exp)//bot.multiplier)
+    current_lvl_exp = (bot.multiplier*(lvl))**2
+    next_lvl_exp = (bot.multiplier*((lvl+1)))**2
+    lvl_percentage = ((exp-current_lvl_exp) / (next_lvl_exp-current_lvl_exp)) * 100
+    embed = discord.Embed(title=f"Stats for {member.name}", colour=discord.Colour.gold())
+    embed.add_field(name="Level", value=str(lvl))
+    embed.add_field(name="Exp", value=f"{exp}/{next_lvl_exp}")
+    embed.add_field(name="Rank", value=f"{rank}/{ctx.guild.member_count}")
+    embed.add_field(name="Level Progress", value=f"{round(lvl_percentage, 2)}%")
+    await ctx.respond(embed=embed)
+
+@bot.slash_command(name="leaderboard", description="View the level leaderboard")
+async def leaderboard(ctx):
+    buttons = {}
+    for i in range(1, 6):
+        buttons[f"{i}\N{COMBINING ENCLOSING KEYCAP}"] = i # only show first 5 pages
+    previous_page = 0
+    current = 1
+    index = 1
+    entries_per_page = 10
+    embed = discord.Embed(title=f"Leaderboard Page {current}", description="", colour=discord.Colour.gold())
+    msg = await ctx.respond(embed=embed)
+    for button in buttons:
+        await msg.add_reaction(button)
+    while True:
+        if current != previous_page:
+            embed.title = f"Leaderboard Page {current}"
+            embed.description = ""
+            async with bot.db.execute(f"SELECT user_id, exp FROM guildData WHERE guild_id = ? ORDER BY exp DESC LIMIT ? OFFSET ? ", (ctx.guild.id, entries_per_page, entries_per_page*(current-1),)) as cursor:
+                index = entries_per_page*(current-1)
+                async for entry in cursor:
+                    index += 1
+                    member_id, exp = entry
+                    member = ctx.guild.get_member(member_id)
+                    embed.description += f"{index}) {member.mention} : {exp}\n"
+                await msg.edit(embed=embed)
+        try:
+            reaction, user = await bot.wait_for("reaction_add", check=lambda reaction, user: user == ctx.author and reaction.emoji in buttons, timeout=60.0)
+        except asyncio.TimeoutError:
+            return await msg.clear_reactions()
+        else:
+            previous_page = current
+            await msg.remove_reaction(reaction.emoji, ctx.author)
+            current = buttons[reaction.emoji]
+"""
 @bot.slash_command(name="vote", description="Vote for our bot!")
 async def vote(ctx):
     embed = discord.Embed(title="Vote for us!", description="Vote for us by clicking the button below!", color=0x6B74C7)
@@ -370,5 +474,7 @@ class VoteButtons(View):
                 url="https://top.gg/bot/849823707429994517/vote",
             )
         )
-
-bot.run("token")
+        
+#bot.loop.create_task(initialize())
+bot.run("ODQ5ODIzNzA3NDI5OTk0NTE3.GzgoCD.BJf9N3L8vFfu3i-FbNG8zvPIPKMdWmgyugo_20")
+#asyncio.run(bot.db.close())
