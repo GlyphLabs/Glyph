@@ -476,5 +476,5 @@ class VoteButtons(View):
         )
         
 #bot.loop.create_task(initialize())
-bot.run("ODQ5ODIzNzA3NDI5OTk0NTE3.GzgoCD.BJf9N3L8vFfu3i-FbNG8zvPIPKMdWmgyugo_20")
+bot.run("")
 #asyncio.run(bot.db.close())
