@@ -20,9 +20,30 @@ intents = discord.Intents.default()
 intents.members = True
 intents.message_content = True
 
-bot = commands.Bot(intents=intents)
+bot = commands.Bot(intents=intents, test_guilds=[1050102412104437801])
 bot.remove_command("help")
 bot.reaction_roles = []
+
+@bot.event
+async def on_ready():
+    print("PurpBot is online!")
+    await bot.change_presence(activity=discord.Game("/info"))
+    bot.add_view(CreateTicket())
+    bot.add_view(TicketSettings())
+    bot.db = await aiosqlite.connect("DataBases/warns.db")
+    await asyncio.sleep(3)
+    async with bot.db.cursor() as cursor:
+        await cursor.execute("CREATE TABLE IF NOT EXISTS warns(user INTEGER, reason TEXT, time INTEGER, guild INTEGER)")
+
+    async with aiofiles.open("reaction_roles.txt", mode="a") as temp:
+        pass
+
+    async with aiofiles.open("reaction_roles.txt", mode="r") as file:
+        lines = await file.readlines()
+        for line in lines:
+            data = line.split(" ")
+            bot.reaction_roles.append(
+                (int(data[0]), int(data[1]), data[2].strip("\n")))
 
 @bot.event
 async def on_command_error(ctx, error):
@@ -261,13 +282,13 @@ async def _help(ctx):
     embed.add_field(name="Moderation",
                     value="`/ban`, `/kick`, `/warn`, `/unwarn`, `/timeout`, `/purge`, `/addrole`, `/removerole`", inline=False)
     embed.add_field(
-        name="Utility", value="`/hug`, `/secret`, `/send`, `/embed`, `/poll`, `/vote`, `/reactionroles`, `/userinfo`, `/calc`, `/search`, `/embwebhook`", inline=False)
+        name="Utility", value="`/hug`, `/secret`, `/send`, `/embed`, `/poll`, `/vote`, `/reactionroles`, `/userinfo`, `/calc`, `/search`", inline=False)
     embed.add_field(name="Information",
                     value="`/ping`, `/warns`, `/serverinfo`, `/membercount`, `/guildcount`, `/invite`", inline=False)
     embed.add_field(name="Webhooks",
                     value="`/embwebhook`, `/msgwebhook`", inline=False)
     embed.add_field(name="Tickets",
-                    value="`/ticket-config", inline=False)
+                    value="`/ticket-config`", inline=False)
     await ctx.respond(embed=embed)
 
 
@@ -479,7 +500,7 @@ async def avatar(ctx, member: Option(discord.Member, required=False)):
 
 @bot.slash_command(name="servericon", description="Sends the server icon")
 async def servericon(ctx):
-    servericon = ctx.guild.icon.url
+    servericon = ctx.guild.icon_url
     embed = discord.Embed(color=0x6B74C7)
     embed.set_image(url=servericon)
     await ctx.respond(embed=embed)
@@ -581,7 +602,7 @@ class VoteButtons(View):
                 url="https://top.gg/bot/849823707429994517/vote",
             )
         )
-        
+
 class CreateTicket(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
@@ -633,25 +654,6 @@ async def ticket_config(ctx):
     econf = discord.Embed(title="Tickets", description="Click on the button below to create a ticket!", color=0x6B74C7)
     await ctx.respond("Tickets configured automatically!", ephemeral=True)
     await ctx.send(embed=econf, view=CreateTicket())
-
-@bot.event
-async def on_ready():
-    print("PurpBot is online!")
-    await bot.change_presence(activity=discord.Game("/info"))
-    bot.db = await aiosqlite.connect("DataBases/warns.db")
-    await asyncio.sleep(3)
-    async with bot.db.cursor() as cursor:
-        await cursor.execute("CREATE TABLE IF NOT EXISTS warns(user INTEGER, reason TEXT, time INTEGER, guild INTEGER)")
-
-    async with aiofiles.open("reaction_roles.txt", mode="a") as temp:
-        pass
-
-    async with aiofiles.open("reaction_roles.txt", mode="r") as file:
-        lines = await file.readlines()
-        for line in lines:
-            data = line.split(" ")
-            bot.reaction_roles.append(
-                (int(data[0]), int(data[1]), data[2].strip("\n")))
             
 # bot.loop.create_task(initialize())
 bot.run("")
