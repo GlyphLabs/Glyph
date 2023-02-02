@@ -1,5 +1,6 @@
 import discord
-from discord.ext.commands import Bot
+from discord.ext.bridge.bot import Bot
+from discord.ext.commands import when_mentioned
 from src.views import CreateTicket, TicketSettings
 import aiosqlite
 from aiofiles import open as aopen
@@ -10,15 +11,16 @@ class PurpBot(Bot):
         intents.members = True
         intents.message_content = True
         self.reaction_roles = []
-        super().__init__(intents=intents, test_guilds=[1050102412104437801], *args, **kwargs)
+        super().__init__(intents=intents, test_guilds=[1050102412104437801], command_prefix=when_mentioned, *args, **kwargs)
 
     async def on_ready(self):
         print("PurpBot is online!")
         await self.change_presence(activity=discord.Game("/info"))
         self.add_view(CreateTicket())
         self.add_view(TicketSettings())
-        self.db = await aiosqlite.connect("DataBases/warns.db")
-        # await sleep(3)
+
+    async def setup_bot(self):
+        self.db = await aiosqlite.connect("warns.db")
         async with self.db.cursor() as cursor:
             await cursor.execute("CREATE TABLE IF NOT EXISTS warns(user INTEGER, reason TEXT, time INTEGER, guild INTEGER)")
 
@@ -31,3 +33,6 @@ class PurpBot(Bot):
                 data = line.split(" ")
                 self.reaction_roles.append(
                     (int(data[0]), int(data[1]), data[2].strip("\n")))
+        
+        for cog in ("fun", "tickets", "moderation", "utils"):
+            print(self.load_extension(f"src.cogs.{cog}"))
