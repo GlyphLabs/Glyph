@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "purpbot"
+version = "0.1.0"
+description = ""
+authors = ["SaiCodez <79881161+SaiCodez@users.noreply.github.com>", "te <thrizzle@skiff.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+py-cord = "^2.3.2"
+aiosqlite = "^0.18.0"
+aiofiles = "^22.1.0"
+jishaku = "^2.5.1"
+
+
+[tool.poetry.group.dev.dependencies]
+mypy = "^0.991"
+black = "^23.1.0"
+ruff = "^0.0.239"
+types-aiofiles = "^22.1.0.6"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
