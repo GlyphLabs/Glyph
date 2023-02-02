@@ -2,6 +2,10 @@ import discord
 from discord.commands import Option
 from discord.ext.commands import MissingPermissions
 from src.bot import PurpBot
+from dotenv import load_dotenv
+from os import environ
+
+load_dotenv()
 
 bot = PurpBot()
 bot.remove_command("help")
@@ -52,5 +56,5 @@ async def poll(ctx,
 
 bot.load_extension("jishaku")
 bot.loop.create_task(bot.setup_bot())
-bot.run("")
+bot.run(environ.get("TOKEN"))
 # asyncio.run(bot.db.close())

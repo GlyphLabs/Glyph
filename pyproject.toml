@@ -12,6 +12,7 @@ py-cord = "^2.3.2"
 aiosqlite = "^0.18.0"
 aiofiles = "^22.1.0"
 jishaku = "^2.5.1"
+python-dotenv = "^0.21.1"
 
 
 [tool.poetry.group.dev.dependencies]
