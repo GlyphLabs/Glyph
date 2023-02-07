@@ -127,7 +127,7 @@ class Utils(Cog):
             description="PurpBot is a Discord bot created in pycord. It's a moderation and utility bot to make your server better and easier to moderate. It has tons of features for you to use\n- Use this following command for all the commands and how to use them: `help`\n\n**Developers** - <@!985809728624005130> & <@!839514280251359292>\n**Support Server** - https://discord.gg/NqZuBvtrEJ",
             color=0x6B74C7,
         )
-        embed.add_field(name="Version:", value="v2.4")
+        embed.add_field(name="Version:", value="v3.1.0")
         await ctx.respond(embed=embed)
 
     @slash_command(name="send", description="Make the bot say anything you want")
