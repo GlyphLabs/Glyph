@@ -11,10 +11,9 @@ class PurpBot(Bot):
     def __init__(self, statcord_key: str = None, *args, **kwargs):
         intents = Intents.default()
         # intents.members = True
-        if self.statcord_key:
-            self.statcord = StatcordClient(self, self.statcord_key)
+        if statcord_key:
+            self.statcord = StatcordClient(self, statcord_key)
         intents.message_content = True
-        self.statcord_key = statcord_key
         self.reaction_roles = []
         super().__init__(
             intents=intents,
