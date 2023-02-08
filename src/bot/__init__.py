@@ -11,7 +11,6 @@ class PurpBot(Bot):
         intents = Intents.default()
         intents.members = True
         intents.message_content = True
-        self._connection.max_messages = 35
 
         self.reaction_roles = []
         super().__init__(intents=intents,
@@ -20,6 +19,7 @@ class PurpBot(Bot):
         ],
         command_prefix=when_mentioned,
         member_cache_flags=MemberCacheFlags.none(),
+        max_messages=None,
         *args, **kwargs)
 
     async def on_ready(self):
