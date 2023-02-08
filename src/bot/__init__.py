@@ -9,17 +9,19 @@ from aiofiles import open as aopen
 class PurpBot(Bot):
     def __init__(self, *args, **kwargs):
         intents = Intents.default()
-        intents.members = True
+        # intents.members = True
         intents.message_content = True
 
         self.reaction_roles = []
-        super().__init__(intents=intents,
-        test_guilds=[
-            1050102412104437801
-        ],
-        command_prefix=when_mentioned,
-        member_cache_flags=MemberCacheFlags.none(),
-        *args, **kwargs)
+        super().__init__(
+            intents=intents,
+            test_guilds=[1050102412104437801],
+            command_prefix=when_mentioned,
+            member_cache_flags=MemberCacheFlags.none(),
+            max_messages=None,
+            *args,
+            **kwargs,
+        )
 
     async def on_ready(self):
         print("PurpBot is online!")
@@ -30,7 +32,9 @@ class PurpBot(Bot):
     async def setup_bot(self):
         self.db = await aiosqlite.connect("warns.db")
         async with self.db.cursor() as cursor:
-            await cursor.execute("CREATE TABLE IF NOT EXISTS warns(user INTEGER, reason TEXT, time INTEGER, guild INTEGER)")
+            await cursor.execute(
+                "CREATE TABLE IF NOT EXISTS warns(user INTEGER, reason TEXT, time INTEGER, guild INTEGER)"
+            )
 
         async with aopen("reaction_roles.txt", mode="a"):
             pass
@@ -40,7 +44,8 @@ class PurpBot(Bot):
             for line in lines:
                 data = line.split(" ")
                 self.reaction_roles.append(
-                    (int(data[0]), int(data[1]), data[2].strip("\n")))
+                    (int(data[0]), int(data[1]), data[2].strip("\n"))
+                )
 
         for cog in ("fun", "tickets", "moderation", "utils"):
             print(self.load_extension(f"src.cogs.{cog}"))

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "purpbot"
-version = "0.1.0"
+version = "3.1.0"
 description = ""
 authors = ["SaiCodez <79881161+SaiCodez@users.noreply.github.com>", "te <thrizzle@skiff.com>"]
 license = "MIT"

@@ -1,5 +1,11 @@
 from src.bot import PurpBot
-from discord.ext.commands import slash_command, Cog, has_permissions, cooldown, BucketType
+from discord.ext.commands import (
+    slash_command,
+    Cog,
+    has_permissions,
+    cooldown,
+    BucketType,
+)
 from discord import Embed, Option, ApplicationContext, Member, Colour, Role
 from discord.ext.commands.errors import MissingPermissions, CommandOnCooldown
 from datetime import timedelta, datetime
@@ -13,7 +19,10 @@ class Moderation(Cog):
 
     async def addwarn(self, ctx: ApplicationContext, reason: str, user: Member):
         async with self.db.cursor() as cursor:
-            await cursor.execute("INSERT INTO warns (user, reason, time, guild) VALUES (?, ?, ?, ?)", (user.id, reason, int(datetime.now().timestamp()), ctx.guild.id))
+            await cursor.execute(
+                "INSERT INTO warns (user, reason, time, guild) VALUES (?, ?, ?, ?)",
+                (user.id, reason, int(datetime.now().timestamp()), ctx.guild.id),
+            )
         await self.db.commit()
 
     @slash_command(name="kick", description="Kicks a member | /kick [member]")
@@ -266,14 +275,20 @@ class Moderation(Cog):
 
     @slash_command(name="addrole", description="Gives a user a role")
     @has_permissions(manage_guild=True)
-    async def addrole(self, ctx: ApplicationContext, role: Option(Role, description="The role you want to add", required=True), member: Option(Member, description="The member who'll get the role")):
+    async def addrole(
+        self,
+        ctx: ApplicationContext,
+        role: Option(Role, description="The role you want to add", required=True),
+        member: Option(Member, description="The member who'll get the role"),
+    ):
         await member.add_roles(role)
         embed = Embed(
-            description=f"{member.mention} got {role.mention}",
-            colour=0x2ECC71
+            description=f"{member.mention} got {role.mention}", colour=0x2ECC71
         )
         embed.set_author(
-            name="Success", icon_url="https://cdn.discordapp.com/emojis/1055805763651641355.webp?size=96&quality=lossless")
+            name="Success",
+            icon_url="https://cdn.discordapp.com/emojis/1055805763651641355.webp?size=96&quality=lossless",
+        )
         await ctx.respond(embed=embed, ephemeral=False)
 
     # error hadnler
@@ -283,30 +298,42 @@ class Moderation(Cog):
         if isinstance(error, MissingPermissions):
             embed = Embed(
                 description="You are missing the `MANAGE_SERVER` permission",
-                color=Colour.red()
+                color=Colour.red(),
             )
             embed.set_author(
-                name="Error", icon_url="https://cdn.discordapp.com/emojis/1055805812511080499.webp?size=96&quality=lossless")
+                name="Error",
+                icon_url="https://cdn.discordapp.com/emojis/1055805812511080499.webp?size=96&quality=lossless",
+            )
             await ctx.respond(embed=embed, ephemeral=False)
         else:
             em = Embed(
                 description="An error occured. Please try again later or contact the developers at the support server",
-                color=Colour.red()
+                color=Colour.red(),
             )
             em.set_author(
-                name="Error", icon_url="https://cdn.discordapp.com/emojis/1055805812511080499.webp?size=96&quality=lossless")
+                name="Error",
+                icon_url="https://cdn.discordapp.com/emojis/1055805812511080499.webp?size=96&quality=lossless",
+            )
             await ctx.respond(embed=em, ephemeral=True)
             raise error
-            
+
     @slash_command(name="removerole", description="Removes from a user a role")
     @has_permissions(manage_guild=True)
-    async def removerole(self, ctx: ApplicationContext, role: Option(Role, description="The role you want to remove", required=True), member: Option(Member, description="The member")):
+    async def removerole(
+        self,
+        ctx: ApplicationContext,
+        role: Option(Role, description="The role you want to remove", required=True),
+        member: Option(Member, description="The member"),
+    ):
         await member.add_roles(role)
-        embed=Embed(
+        embed = Embed(
             description=f"{member.mention} lost the {role.mention} role",
-            colour=0x2ECC71
+            colour=0x2ECC71,
         )
-        embed.set_author(name="Success", icon_url="https://cdn.discordapp.com/emojis/1055805763651641355.webp?size=96&quality=lossless")
+        embed.set_author(
+            name="Success",
+            icon_url="https://cdn.discordapp.com/emojis/1055805763651641355.webp?size=96&quality=lossless",
+        )
         await ctx.respond(embed=embed, ephemeral=False)
 
     # error hadnler
@@ -314,20 +341,27 @@ class Moderation(Cog):
     @removerole.error
     async def removeroleerror(self, ctx: ApplicationContext, error):
         if isinstance(error, MissingPermissions):
-            embed=Embed(
+            embed = Embed(
                 description="You are missing the `MANAGE_SERVER` permission",
-                color=Colour.red()
+                color=Colour.red(),
             )
-            embed.set_author(name="Error", icon_url="https://cdn.discordapp.com/emojis/1055805812511080499.webp?size=96&quality=lossless")
+            embed.set_author(
+                name="Error",
+                icon_url="https://cdn.discordapp.com/emojis/1055805812511080499.webp?size=96&quality=lossless",
+            )
             await ctx.respond(embed=embed, ephemeral=False)
         else:
-            em=Embed(
+            em = Embed(
                 description="An error occured. Please try again later or contact the developers at the support server",
-                color=Colour.red()
+                color=Colour.red(),
             )
-            em.set_author(name="Error", icon_url="https://cdn.discordapp.com/emojis/1055805812511080499.webp?size=96&quality=lossless")
+            em.set_author(
+                name="Error",
+                icon_url="https://cdn.discordapp.com/emojis/1055805812511080499.webp?size=96&quality=lossless",
+            )
             await ctx.respond(embed=em, ephemeral=True)
             raise error
+
 
 def setup(bot: PurpBot):
     bot.add_cog(Moderation(bot))

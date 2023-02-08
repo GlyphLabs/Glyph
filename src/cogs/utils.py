@@ -38,23 +38,19 @@ class Utils(Cog):
     async def userinfo(
         self, ctx: ApplicationContext, member: Option(Member, required=False)
     ):
-        if member is None:
-            member = ctx.author
+        member = member if member else ctx.author
         date_format = "%a, %d %b %Y %I:%M %p"
         embed = Embed(color=0x6B74C7, description=member.mention)
         embed.set_author(name=str(member), icon_url=member.avatar.url)
         embed.set_thumbnail(url=member.avatar.url)
         embed.add_field(name="Joined", value=member.joined_at.strftime(date_format))
-        members = sorted(ctx.guild.members, key=lambda m: m.joined_at)
-        embed.add_field(name="Join position", value=str(members.index(member) + 1))
         embed.add_field(
             name="Registered", value=member.created_at.strftime(date_format)
         )
         if len(member.roles) > 1:
-            role_string = " ".join([r.mention for r in member.roles][1:])
             embed.add_field(
                 name="Roles [{}]".format(len(member.roles) - 1),
-                value=role_string,
+                value=", ".join([r.mention for r in member.roles][1:]),
                 inline=False,
             )
         perm_string = ", ".join(
@@ -64,6 +60,7 @@ class Utils(Cog):
                 if p[1]
             ]
         )
+        
         embed.add_field(name="Guild permissions", value=perm_string, inline=False)
         embed.set_footer(text="ID: " + str(member.id))
         await ctx.respond(embed=embed)
@@ -127,7 +124,7 @@ class Utils(Cog):
             description="PurpBot is a Discord bot created in pycord. It's a moderation and utility bot to make your server better and easier to moderate. It has tons of features for you to use\n- Use this following command for all the commands and how to use them: `help`\n\n**Developers** - <@!985809728624005130> & <@!839514280251359292>\n**Support Server** - https://discord.gg/NqZuBvtrEJ",
             color=0x6B74C7,
         )
-        embed.add_field(name="Version:", value="v2.4")
+        embed.add_field(name="Version:", value="v3.1.0")
         await ctx.respond(embed=embed)
 
     @slash_command(name="send", description="Make the bot say anything you want")
