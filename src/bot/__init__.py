@@ -4,14 +4,15 @@ from discord.ext.commands import when_mentioned
 from src.views import CreateTicket, TicketSettings
 import aiosqlite
 from aiofiles import open as aopen
+from statcord import StatcordClient
 
 
 class PurpBot(Bot):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, statcord_key: str = None, *args, **kwargs):
         intents = Intents.default()
         # intents.members = True
         intents.message_content = True
-
+        self.statcord_key = statcord_key
         self.reaction_roles = []
         super().__init__(
             intents=intents,
@@ -26,6 +27,8 @@ class PurpBot(Bot):
     async def on_ready(self):
         print("PurpBot is online!")
         await self.change_presence(activity=Game("/info"))
+        if self.statcord_key:
+            self.statcord = StatcordClient(self, self.statcord_key)
         self.add_view(CreateTicket())
         self.add_view(TicketSettings())
 
