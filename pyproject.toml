@@ -13,6 +13,7 @@ aiosqlite = "^0.18.0"
 aiofiles = "^22.1.0"
 jishaku = "^2.5.1"
 python-dotenv = "^0.21.1"
+betterstatcord-py = "^3.5.0"
 
 
 [tool.poetry.group.dev.dependencies]

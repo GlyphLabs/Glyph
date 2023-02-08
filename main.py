@@ -7,7 +7,7 @@ from os import environ
 
 load_dotenv()
 
-bot = PurpBot()
+bot = PurpBot(statcord_key=environ.get("STATCORD_KEY"))
 bot.remove_command("help")
 
 
