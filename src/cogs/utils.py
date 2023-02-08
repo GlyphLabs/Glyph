@@ -60,6 +60,7 @@ class Utils(Cog):
                 if p[1]
             ]
         )
+        
         embed.add_field(name="Guild permissions", value=perm_string, inline=False)
         embed.set_footer(text="ID: " + str(member.id))
         await ctx.respond(embed=embed)
