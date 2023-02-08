@@ -38,23 +38,19 @@ class Utils(Cog):
     async def userinfo(
         self, ctx: ApplicationContext, member: Option(Member, required=False)
     ):
-        if member is None:
-            member = ctx.author
+        member = member if member else ctx.author
         date_format = "%a, %d %b %Y %I:%M %p"
         embed = Embed(color=0x6B74C7, description=member.mention)
         embed.set_author(name=str(member), icon_url=member.avatar.url)
         embed.set_thumbnail(url=member.avatar.url)
         embed.add_field(name="Joined", value=member.joined_at.strftime(date_format))
-        members = sorted(ctx.guild.members, key=lambda m: m.joined_at)
-        embed.add_field(name="Join position", value=str(members.index(member) + 1))
         embed.add_field(
             name="Registered", value=member.created_at.strftime(date_format)
         )
-        if len(member.roles) > 1:
-            role_string = " ".join([r.mention for r in member.roles][1:])
+        if member.roles > 1:
             embed.add_field(
                 name="Roles [{}]".format(len(member.roles) - 1),
-                value=role_string,
+                value=", ".join([r.mention for r in member.roles][1:]),
                 inline=False,
             )
         perm_string = ", ".join(
