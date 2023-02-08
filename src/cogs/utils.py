@@ -47,7 +47,7 @@ class Utils(Cog):
         embed.add_field(
             name="Registered", value=member.created_at.strftime(date_format)
         )
-        if member.roles > 1:
+        if len(member.roles) > 1:
             embed.add_field(
                 name="Roles [{}]".format(len(member.roles) - 1),
                 value=", ".join([r.mention for r in member.roles][1:]),
