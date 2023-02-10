@@ -1,29 +1,29 @@
 from discord import Intents, Game, MemberCacheFlags
-from discord.ext.bridge.bot import Bot
-from discord.ext.commands import when_mentioned
+from discord.ext.commands import when_mentioned, Bot
 from src.views import CreateTicket, TicketSettings
 import aiosqlite
 from aiofiles import open as aopen
 from statcord import StatcordClient
+from typing import Optional, List, Tuple
 
 
 class PurpBot(Bot):
-    def __init__(self, statcord_key: str = None, *args, **kwargs):
+    def __init__(self, statcord_key: Optional[str], *args, **kwargs):
         intents = Intents.default()
         # intents.members = True
-        if statcord_key:
-            self.statcord = StatcordClient(self, statcord_key)
         intents.message_content = True
-        self.reaction_roles = []
+        self.statcord_key = statcord_key
+        self.reaction_roles: List[Tuple[int, int, int]] = []
         super().__init__(
+            command_prefix=when_mentioned,
             intents=intents,
             test_guilds=[1050102412104437801],
-            command_prefix=when_mentioned,
             member_cache_flags=MemberCacheFlags.none(),
             max_messages=None,
             *args,
             **kwargs,
         )
+        self.statcord = StatcordClient(self, self.statcord_key)
 
     async def on_ready(self):
         print("PurpBot is online!")
