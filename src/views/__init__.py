@@ -27,7 +27,7 @@ class CreateTicket(View):
             return  # something is wrong if this happens
         overwrtes = {
             interaction.guild.default_role: PermissionOverwrite(read_messages=False),
-            interaction.guild.me: PermissionOverwrite(read_messages=True),
+            interaction.user: PermissionOverwrite(read_messages=True),
         }
         channel = await interaction.guild.create_text_channel(f"{interaction.user}-ticket", overwrites=overwrtes)  # type: ignore
         await interaction.response.send_message(
