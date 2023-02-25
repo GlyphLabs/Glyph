@@ -14,11 +14,9 @@ from datetime import timedelta
 class Moderation(Cog):
     def __init__(self, bot: PurpBot):
         self.bot = bot
-        self.db = self.bot.db
-        print("test!")
 
     async def addwarn(self, ctx: ApplicationContext, reason: str, user: Member):
-        await self.db.create_warn(user.id, ctx.guild.id, reason)
+        await self.bot.db.create_warn(user.id, ctx.guild.id, reason)
 
     @slash_command(name="kick", description="Kicks a member | /kick [member]")
     @has_permissions(kick_members=True)
@@ -176,7 +174,7 @@ class Moderation(Cog):
             required=True,
         ),
     ):
-        async with self.db.pool.acquire() as conn:
+        async with self.bot.db.pool.acquire() as conn:
             async with conn.transaction():
                 await conn.execute(
                     "DELETE FROM warns WHERE user = ? AND guild = ?",
@@ -200,7 +198,7 @@ class Moderation(Cog):
         ctx: ApplicationContext,
         member: Option(Member, description="The member's warns", required=True),
     ):
-        rows = await self.db.get_warns(member.id, ctx.guild.id)
+        rows = await self.bot.db.get_warns(member.id, ctx.guild.id)
         if rows:
             rows.sort(key=lambda x: x.time, reverse=True)
             embed = Embed(colour=0x6B74C7, title=f"Warnings for {member.name}")
