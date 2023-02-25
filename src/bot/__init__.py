@@ -1,6 +1,5 @@
 from discord import Intents, Game, MemberCacheFlags
 from discord.ext.commands import when_mentioned, Bot
-from src.views import CreateTicket, TicketSettings
 from aiofiles import open as aopen
 from statcord import StatcordClient
 from typing import Optional, List, Tuple
@@ -17,9 +16,16 @@ class PurpBot(Bot):
         "pool",
         "database_url",
         "db",
-        "perspective"
+        "perspective",
+        "scanned_messages_count",
     )
-    def __init__(self, statcord_key: Optional[str], database_url: Optional[str] = None, perspective_key: Optional[str] = None):
+
+    def __init__(
+        self,
+        statcord_key: Optional[str],
+        database_url: Optional[str] = None,
+        perspective_key: Optional[str] = None,
+    ):
         intents = Intents.default()
         intents.message_content = True
         self.pool: Optional[Pool]
@@ -27,7 +33,8 @@ class PurpBot(Bot):
         self.statcord_key = statcord_key
         self.reaction_roles: List[Tuple[int, int, int]] = []
         self.database_url = database_url
-        
+        self.scanned_messages_count: int = 0
+
         if perspective_key:
             self.perspective = Perspective(perspective_key)
 
@@ -39,13 +46,13 @@ class PurpBot(Bot):
             max_messages=None,
         )
 
-        self.statcord = StatcordClient(self, self.statcord_key)
+        self.statcord = StatcordClient(
+            self, self.statcord_key, custom_1=lambda: self.scanned_messages_count
+        )
 
     async def on_ready(self):
         print("PurpBot is online!")
         await self.change_presence(activity=Game("/info"))
-        self.add_view(CreateTicket())
-        self.add_view(TicketSettings())
 
     async def getch_channel(self, channel_id: int):
         return self.get_channel(channel_id) or await self.fetch_channel(channel_id)
@@ -57,7 +64,7 @@ class PurpBot(Bot):
         async with self.pool.acquire() as conn:
             async with conn.transaction():
                 await conn.execute(
-                    "CREATE TABLE IF NOT EXISTS warns(user_id BIGINT, reason TEXT, time TIMESTAMP, guild BIGINT)"
+                    "CREATE TABLE IF NOT EXISTS warns(user_id BIGINT, reason TEXT, time BIGINT, guild BIGINT)"
                 )
                 await conn.execute(
                     "CREATE TABLE IF NOT EXISTS guild_config (guild_id BIGINT PRIMARY KEY, ai_reports_channel BIGINT UNIQUE, logs_channel BIGINT UNIQUE)"
