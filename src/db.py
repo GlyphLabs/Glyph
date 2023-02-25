@@ -8,13 +8,14 @@ from datetime import datetime
 
 class MsgPackMixin:
     def serialize(self):
-        return packb(
-            {
-                column.name: getattr(self, column.name)
-                for column in self.__table__.columns
-                if not column.name.startswith("_")
-            }
-        )
+        return packb(self.as_dict())
+
+    def as_dict(self):
+        return {
+            attr: getattr(self, attr)
+            for attr in dir(self)
+            if not attr.startswith('__') and not callable(getattr(self,attr))
+        }
 
     @classmethod
     def from_data(cls, data):
