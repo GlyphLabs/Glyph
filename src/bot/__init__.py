@@ -25,9 +25,12 @@ class PurpBot(Bot):
         statcord_key: Optional[str],
         database_url: Optional[str] = None,
         perspective_key: Optional[str] = None,
+        test_mode: Optional[bool] = False,
     ):
         intents = Intents.default()
         intents.message_content = True
+        intents.members = True
+
         self.pool: Optional[Pool]
         self.db: Database
         self.statcord_key = statcord_key
@@ -38,17 +41,25 @@ class PurpBot(Bot):
         if perspective_key:
             self.perspective = Perspective(perspective_key)
 
+        member_cache_flags = MemberCacheFlags.none()
+        member_cache_flags.interaction = True
+        member_cache_flags.joined = True
         super().__init__(
             command_prefix=when_mentioned,
             intents=intents,
-            test_guilds=[1050102412104437801],
-            member_cache_flags=MemberCacheFlags.none(),
+            debug_guilds=[1050102412104437801] if test_mode else None,
+            member_cache_flags=member_cache_flags,
             max_messages=None,
         )
+
+        for cog in ("fun", "moderation", "utils", "ai", "config"):
+            print(self.load_extension(f"src.cogs.{cog}")[0])
 
         self.statcord = StatcordClient(
             self, self.statcord_key, custom_1=lambda: self.scanned_messages_count
         )
+
+    
 
     async def on_ready(self):
         print("PurpBot is online!")
@@ -81,5 +92,3 @@ class PurpBot(Bot):
                     (int(data[0]), int(data[1]), data[2].strip("\n"))
                 )
 
-        for cog in ("fun", "tickets", "moderation", "utils", "ai"):
-            print(self.load_extension(f"src.cogs.{cog}"))
