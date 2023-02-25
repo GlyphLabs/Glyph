@@ -1,5 +1,10 @@
 from discord.ui import View, Button, button
-from discord import ButtonStyle, PermissionOverwrite, ApplicationContext, Embed
+from discord import (
+    ButtonStyle,
+    PermissionOverwrite,
+    Interaction,
+    Embed,
+)
 
 
 class VoteButtons(View):
@@ -22,7 +27,7 @@ class CreateTicket(View):
         style=ButtonStyle.green,
         custom_id="create_a_ticket:green",
     )
-    async def create_ticket(self, button: Button, interaction: ApplicationContext):
+    async def create_ticket(self, button: Button, interaction: Interaction):
         if not interaction.guild:
             return  # something is wrong if this happens
         overwrtes = {
@@ -48,7 +53,7 @@ class TicketSettings(View):
     @button(
         label="Close Ticket", style=ButtonStyle.red, custom_id="ticket_settings:red"
     )
-    async def close_ticket(self, button: Button, interaction: ApplicationContext):
+    async def close_ticket(self, button: Button, interaction: Interaction):
         if not interaction.user:
             return
         await interaction.response.send_message("Closing ticket", ephemeral=False)
