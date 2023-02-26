@@ -42,7 +42,13 @@ class AiModeration(Cog):
             custom_id=f"flagged_message_options:ban-{message.channel.id}-{message.id}",
             disabled=disabled,
         )
-        items = (delete_button, timeout_button, kick_button, ban_button)
+        jump_button: Button = Button(
+            style=ButtonStyle.url,
+            label="Jump to message",
+            url=message.jump_url,
+            disabled=disabled,
+        )
+        items = (delete_button, timeout_button, kick_button, ban_button, jump_button)
         return View(*items, timeout=None)
 
     @Cog.listener()
@@ -143,10 +149,6 @@ class AiModeration(Cog):
                 )
                 .set_footer(
                     text=f"Message ID: {message.id} • Author ID: {message.author.id}"
-                )
-                .add_field(
-                    name="Message",
-                    value=f"{message.content}\n[[Jump to message]({message.jump_url})]",
                 )
             )
             await reports_channel.send(embed=embed, view=self.build_view(message))
