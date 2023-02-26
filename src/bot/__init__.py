@@ -52,7 +52,7 @@ class PurpBot(Bot):
             max_messages=None,
         )
 
-        for cog in ("fun", "moderation", "utils", "ai", "config"):
+        for cog in ("fun", "moderation", "utils", "ai", "config", "error"):
             print(self.load_extension(f"src.cogs.{cog}")[0])
 
         self.statcord = StatcordClient(
