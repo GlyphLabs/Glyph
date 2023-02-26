@@ -60,7 +60,7 @@ class Utils(Cog):
                 if p[1]
             ]
         )
-        
+
         embed.add_field(name="Guild permissions", value=perm_string, inline=False)
         embed.set_footer(text="ID: " + str(member.id))
         await ctx.respond(embed=embed)
@@ -294,28 +294,28 @@ class Utils(Cog):
             await file.write(f"{role.id} {message_id.id} {emoji_utf}\n")
             await ctx.respond("Reaction has been set.")
 
-        @Cog.listener()
-        async def on_raw_reaction_add(self, payload):
-            for role_id, message_id_id, emoji in self.bot.reaction_roles:
-                if message_id_id == payload.message_id and emoji == str(
-                    payload.emoji.name.encode("utf-8")
-                ):
-                    await payload.member.add_roles(
-                        self.bot.get_guild(payload.guild_id).get_role(role_id)
-                    )
-                    return
+    @Cog.listener()
+    async def on_raw_reaction_add(self, payload):
+        for role_id, message_id_id, emoji in self.bot.reaction_roles:
+            if message_id_id == payload.message_id and emoji == str(
+                payload.emoji.name.encode("utf-8")
+            ):
+                await payload.member.add_roles(
+                    self.bot.get_guild(payload.guild_id).get_role(role_id)
+                )
+                return
 
-        @Cog.listener()
-        async def on_raw_reaction_remove(self, payload):
-            for role_id, msg_id, emoji in self.bot.reaction_roles:
-                if msg_id == payload.message_id and emoji == str(
-                    payload.emoji.name.encode("utf-8")
-                ):
-                    guild = self.bot.get_guild(payload.guild_id)
-                    await guild.get_member(payload.user_id).remove_roles(
-                        guild.get_role(role_id)
-                    )
-                    return
+    @Cog.listener()
+    async def on_raw_reaction_remove(self, payload):
+        for role_id, msg_id, emoji in self.bot.reaction_roles:
+            if msg_id == payload.message_id and emoji == str(
+                payload.emoji.name.encode("utf-8")
+            ):
+                guild = self.bot.get_guild(payload.guild_id)
+                await guild.get_member(payload.user_id).remove_roles(
+                    guild.get_role(role_id)
+                )
+                return
 
 
 def setup(bot: PurpBot):

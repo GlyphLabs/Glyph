@@ -1,42 +1,83 @@
 from discord import Intents, Game, MemberCacheFlags
 from discord.ext.commands import when_mentioned, Bot
-from src.views import CreateTicket, TicketSettings
-import aiosqlite
 from aiofiles import open as aopen
 from statcord import StatcordClient
 from typing import Optional, List, Tuple
+from asyncpg import create_pool, Pool
+from perspective.models import Perspective
+from src.db import Database
 
 
 class PurpBot(Bot):
-    def __init__(self, statcord_key: Optional[str], *args, **kwargs):
+    __slots__ = (
+        "statcord_key",
+        "statcord",
+        "reaction_roles",
+        "pool",
+        "database_url",
+        "db",
+        "perspective",
+        "scanned_messages_count",
+    )
+
+    def __init__(
+        self,
+        statcord_key: Optional[str],
+        database_url: Optional[str] = None,
+        perspective_key: Optional[str] = None,
+        test_mode: Optional[bool] = False,
+    ):
         intents = Intents.default()
-        # intents.members = True
         intents.message_content = True
+        intents.members = True
+
+        self.pool: Optional[Pool]
+        self.db: Database
         self.statcord_key = statcord_key
         self.reaction_roles: List[Tuple[int, int, int]] = []
+        self.database_url = database_url
+        self.scanned_messages_count: int = 0
+
+        if perspective_key:
+            self.perspective = Perspective(perspective_key)
+
+        member_cache_flags = MemberCacheFlags.none()
+        member_cache_flags.interaction = True
+        member_cache_flags.joined = True
         super().__init__(
             command_prefix=when_mentioned,
             intents=intents,
-            test_guilds=[1050102412104437801],
-            member_cache_flags=MemberCacheFlags.none(),
+            debug_guilds=[1050102412104437801] if test_mode else None,
+            member_cache_flags=member_cache_flags,
             max_messages=None,
-            *args,
-            **kwargs,
         )
-        self.statcord = StatcordClient(self, self.statcord_key)
+
+        for cog in ("fun", "moderation", "utils", "ai", "config", "error"):
+            print(self.load_extension(f"src.cogs.{cog}")[0])
+
+        self.statcord = StatcordClient(
+            self, self.statcord_key, custom_1=lambda: self.scanned_messages_count
+        )
 
     async def on_ready(self):
         print("PurpBot is online!")
         await self.change_presence(activity=Game("/info"))
-        self.add_view(CreateTicket())
-        self.add_view(TicketSettings())
+
+    async def getch_channel(self, channel_id: int):
+        return self.get_channel(channel_id) or await self.fetch_channel(channel_id)
 
     async def setup_bot(self):
-        self.db = await aiosqlite.connect("warns.db")
-        async with self.db.cursor() as cursor:
-            await cursor.execute(
-                "CREATE TABLE IF NOT EXISTS warns(user INTEGER, reason TEXT, time INTEGER, guild INTEGER)"
-            )
+        if self.database_url:
+            self.pool: Pool = await create_pool(self.database_url)
+            self.db = Database(self.pool)
+        async with self.pool.acquire() as conn:
+            async with conn.transaction():
+                await conn.execute(
+                    "CREATE TABLE IF NOT EXISTS warns(user_id BIGINT, reason TEXT, time BIGINT, guild BIGINT)"
+                )
+                await conn.execute(
+                    "CREATE TABLE IF NOT EXISTS guild_config (guild_id BIGINT PRIMARY KEY, ai_reports_channel BIGINT UNIQUE, logs_channel BIGINT UNIQUE)"
+                )
 
         async with aopen("reaction_roles.txt", mode="a"):
             pass
@@ -48,6 +89,3 @@ class PurpBot(Bot):
                 self.reaction_roles.append(
                     (int(data[0]), int(data[1]), data[2].strip("\n"))
                 )
-
-        for cog in ("fun", "tickets", "moderation", "utils"):
-            print(self.load_extension(f"src.cogs.{cog}"))

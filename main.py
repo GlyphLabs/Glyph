@@ -7,7 +7,12 @@ from os import environ
 
 load_dotenv()
 
-bot = PurpBot(statcord_key=environ.get("STATCORD_KEY"))
+bot = PurpBot(
+    statcord_key=environ.get("STATCORD_KEY"),
+    database_url=environ.get("DATABASE_URL"),
+    perspective_key=environ.get("PERSPECTIVE_KEY"),
+    test_mode=bool(int(environ.get("TEST_MODE", 0))),
+)
 bot.remove_command("help")
 
 

@@ -8,22 +8,15 @@ from discord.ext.commands import (
 )
 from discord import Embed, Option, ApplicationContext, Member, Colour, Role
 from discord.ext.commands.errors import MissingPermissions, CommandOnCooldown
-from datetime import timedelta, datetime
+from datetime import timedelta
 
 
 class Moderation(Cog):
     def __init__(self, bot: PurpBot):
         self.bot = bot
-        self.db = self.bot.db
-        print("test!")
 
     async def addwarn(self, ctx: ApplicationContext, reason: str, user: Member):
-        async with self.db.cursor() as cursor:
-            await cursor.execute(
-                "INSERT INTO warns (user, reason, time, guild) VALUES (?, ?, ?, ?)",
-                (user.id, reason, int(datetime.now().timestamp()), ctx.guild.id),
-            )
-        await self.db.commit()
+        await self.bot.db.create_warn(user.id, ctx.guild.id, reason)
 
     @slash_command(name="kick", description="Kicks a member | /kick [member]")
     @has_permissions(kick_members=True)
@@ -48,7 +41,7 @@ class Moderation(Cog):
             )
             await ctx.respond(embed=em, ephemeral=True)
         else:
-            if reason == None:
+            if not reason:
                 reason = "No reason provided"
             await member.kick(reason=reason)
             embed = Embed(
@@ -106,7 +99,7 @@ class Moderation(Cog):
             )
             await ctx.respond(embed=em, ephemeral=True)
         else:
-            if reason == None:
+            if not reason:
                 reason = "No reason provided"
             await member.ban(reason=reason)
             embed = Embed(
@@ -181,26 +174,21 @@ class Moderation(Cog):
             required=True,
         ),
     ):
-        async with self.db.cursor() as cursor:
-            await cursor.execute(
-                "SELECT reason FROM warns WHERE user = ? AND guild = ?",
-                (member.id, ctx.guild.id),
-            )
-            data = await cursor.fetchone()
-            if data:
-                await cursor.execute(
+        async with self.bot.db.pool.acquire() as conn:
+            async with conn.transaction():
+                await conn.execute(
                     "DELETE FROM warns WHERE user = ? AND guild = ?",
                     (member.id, ctx.guild.id),
                 )
-            embed = Embed(
-                colour=Colour.green(),
-                description=f"Removed all of {member.mention}'s warn(s)",
-            )
-            embed.set_author(
-                name="Success",
-                icon_url="https://cdn.discordapp.com/emojis/1055805763651641355.webp?size=96&quality=lossless",
-            )
-            await ctx.respond(embed=embed)
+                embed = Embed(
+                    colour=Colour.green(),
+                    description=f"Removed all of {member.mention}'s warn(s)",
+                )
+                embed.set_author(
+                    name="Success",
+                    icon_url="https://cdn.discordapp.com/emojis/1055805763651641355.webp?size=96&quality=lossless",
+                )
+                await ctx.respond(embed=embed)
 
     @slash_command(
         name="warns", description="Shows someone's warnings | /warrns [member]"
@@ -210,26 +198,21 @@ class Moderation(Cog):
         ctx: ApplicationContext,
         member: Option(Member, description="The member's warns", required=True),
     ):
-        async with self.db.cursor() as cursor:
-            await cursor.execute(
-                "SELECT reason, time FROM warns WHERE user = ? AND guild = ?",
-                (member.id, ctx.guild.id),
-            )
-            data = await cursor.fetchall()
-            if data:
-                embed = Embed(colour=0x6B74C7, title=f"Warnings for {member.name}")
-                warnnum = 0
-                for table in data:
-                    warnnum += 1
-                    embed.add_field(
-                        name=f"Warning #{warnnum}",
-                        value=f"**Reason:** {table[0]} | **Date:** <t:{int(table[1])}:F>",
-                    )
-                await ctx.respond(embed=embed)
-            else:
-                embed = Embed(colour=0x6B74C7, title=f"No warnings for {member.name}")
-                await ctx.respond(embed=embed)
-        await self.db.commit()
+        rows = await self.bot.db.get_warns(member.id, ctx.guild.id)
+        if rows:
+            rows.sort(key=lambda x: x.time, reverse=True)
+            embed = Embed(colour=0x6B74C7, title=f"Warnings for {member.name}")
+            warnnum = 0
+            for row in rows:
+                warnnum += 1
+                embed.add_field(
+                    name=f"Warning #{warnnum}",
+                    value=f"**Reason:** {row.reason} | **Date:** <t:{int(row.time)}:F>",
+                )
+            await ctx.respond(embed=embed)
+        else:
+            embed = Embed(colour=0x6B74C7, title=f"No warnings for {member.name}")
+            await ctx.respond(embed=embed)
 
     @slash_command(name="timeout", description="Puts a member in timeout")
     async def timeout(self, ctx, member: Option(Member), minutes: Option(int)):
