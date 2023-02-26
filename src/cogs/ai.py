@@ -156,3 +156,4 @@ class AiModeration(Cog):
 
 def setup(bot: PurpBot):
     bot.add_cog(AiModeration(bot))
+    #
