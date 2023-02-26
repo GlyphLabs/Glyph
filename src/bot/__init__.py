@@ -59,8 +59,6 @@ class PurpBot(Bot):
             self, self.statcord_key, custom_1=lambda: self.scanned_messages_count
         )
 
-    
-
     async def on_ready(self):
         print("PurpBot is online!")
         await self.change_presence(activity=Game("/info"))
@@ -91,4 +89,3 @@ class PurpBot(Bot):
                 self.reaction_roles.append(
                     (int(data[0]), int(data[1]), data[2].strip("\n"))
                 )
-

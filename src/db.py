@@ -14,7 +14,7 @@ class MsgPackMixin:
         return {
             attr: getattr(self, attr)
             for attr in dir(self)
-            if not attr.startswith('__') and not callable(getattr(self,attr))
+            if not attr.startswith("__") and not callable(getattr(self, attr))
         }
 
     @classmethod

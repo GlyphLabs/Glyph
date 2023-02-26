@@ -47,8 +47,10 @@ class AiModeration(Cog):
 
     @Cog.listener()
     async def on_interaction(self, interaction: Interaction):
-        if not interaction.custom_id or not interaction.message or not interaction.custom_id.startswith(
-            "flagged_message_options"
+        if (
+            not interaction.custom_id
+            or not interaction.message
+            or not interaction.custom_id.startswith("flagged_message_options")
         ):
             return
         cleaned_id = interaction.custom_id.split(":")[1]
@@ -57,9 +59,7 @@ class AiModeration(Cog):
         message = await channel.fetch_message(int(msg_id))
         if action == "delete":
             await message.delete()
-            await interaction.response.send_message(
-                "Message deleted.", ephemeral=True
-            )
+            await interaction.response.send_message("Message deleted.", ephemeral=True)
         elif action == "timeout":
             await message.delete()
             author = await message.guild.fetch_member(message.author.id)
@@ -69,7 +69,10 @@ class AiModeration(Cog):
             )
         elif action == "kick":
             await message.delete()
-            await message.guild.kick(message.author.id, f"Flagged message by AI moderation. Kicked by {interaction.user}.")
+            await message.guild.kick(
+                message.author.id,
+                f"Flagged message by AI moderation. Kicked by {interaction.user}.",
+            )
             await interaction.response.send_message(
                 f"{message.author} has been kicked.", ephemeral=True
             )
@@ -79,7 +82,10 @@ class AiModeration(Cog):
             await interaction.response.send_message(
                 f"{message.author} has been banned.", ephemeral=True
             )
-        await interaction.message.edit(embed=interaction.message.embeds[0], view=self.build_view(message, disabled=True))
+        await interaction.message.edit(
+            embed=interaction.message.embeds[0],
+            view=self.build_view(message, disabled=True),
+        )
 
     @Cog.listener()
     async def on_message(self, message: Message):
