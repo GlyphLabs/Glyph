@@ -6,7 +6,9 @@ from typing import Optional, List, Tuple
 from asyncpg import create_pool, Pool
 from perspective.models import Perspective
 from src.db import Database
-
+from logging import info, error, getLogger, basicConfig, INFO
+basicConfig(format='[%(levelname)s] %(asctime)s: %(message)s', level=INFO)
+getLogger("discord.py")
 
 class PurpBot(Bot):
     __slots__ = (
@@ -51,16 +53,22 @@ class PurpBot(Bot):
             member_cache_flags=member_cache_flags,
             max_messages=None,
         )
+        info("initialized bot")
 
         for cog in ("fun", "moderation", "utils", "ai", "config", "error"):
-            print(self.load_extension(f"src.cogs.{cog}")[0])
+            try:
+                info(
+                    f'loaded cog {self.load_extension(f"src.cogs.{cog}", store=False)[0]}'
+                )
+            except Exception as e:
+                error(f"failed to load cog {cog}: {e}")
 
         self.statcord = StatcordClient(
             self, self.statcord_key, custom_1=lambda: self.scanned_messages_count
         )
 
     async def on_ready(self):
-        print("PurpBot is online!")
+        info("PurpBot is online!")
         await self.change_presence(activity=Game("/info"))
 
     async def getch_channel(self, channel_id: int):
@@ -70,6 +78,7 @@ class PurpBot(Bot):
         if self.database_url:
             self.pool: Pool = await create_pool(self.database_url)
             self.db = Database(self.pool)
+
         async with self.pool.acquire() as conn:
             async with conn.transaction():
                 await conn.execute(
@@ -78,6 +87,7 @@ class PurpBot(Bot):
                 await conn.execute(
                     "CREATE TABLE IF NOT EXISTS guild_config (guild_id BIGINT PRIMARY KEY, ai_reports_channel BIGINT UNIQUE, logs_channel BIGINT UNIQUE)"
                 )
+        info("initialized database")
 
         async with aopen("reaction_roles.txt", mode="a"):
             pass

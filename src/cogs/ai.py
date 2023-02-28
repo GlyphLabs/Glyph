@@ -8,7 +8,8 @@ from ormsgpack import packb, unpackb
 from typing import Deque
 from perspective import Attribute
 from datetime import timedelta
-
+from logging import getLogger
+logger = getLogger(__name__)
 
 class AiModeration(Cog):
     def __init__(self, bot: PurpBot):
@@ -48,7 +49,7 @@ class AiModeration(Cog):
             url=message.jump_url,
             disabled=disabled,
         )
-        items = ( jump_button, delete_button, timeout_button, kick_button, ban_button)
+        items = (jump_button, delete_button, timeout_button, kick_button, ban_button)
         return View(*items, timeout=None)
 
     @Cog.listener()
@@ -101,7 +102,7 @@ class AiModeration(Cog):
         guild_settings = await self.bot.db.get_guild_settings(message.guild.id)
         if not guild_settings or not guild_settings.ai_reports_channel:
             return
-
+        logger.debug(f"adding message {message.id} to scanning queue")
         self.messages.append(
             packb(
                 {
@@ -120,7 +121,7 @@ class AiModeration(Cog):
         if not self.messages:
             return
 
-        msg = unpackb(self.messages.popleft())
+        msg = unpackb(self.messages[0])
 
         channel = await self.bot.getch_channel(msg["channel_id"])
         message = await channel.fetch_message(msg["message_id"])
@@ -152,6 +153,14 @@ class AiModeration(Cog):
                 )
             )
             await reports_channel.send(embed=embed, view=self.build_view(message))
+        self.messages.popleft()
+
+    @scan_messages.error
+    async def scan_msgs_error(self, error: Exception):
+        logger.error(f"error while scanning message {unpackb(self.messages.popleft())}")
+        if not self.scan_messages.is_running():
+            self.scan_messages.start()
+        
 
 
 def setup(bot: PurpBot):
