@@ -45,7 +45,6 @@ class PurpBot(Bot):
 
         member_cache_flags = MemberCacheFlags.none()
         member_cache_flags.interaction = True
-        member_cache_flags.joined = True
         super().__init__(
             command_prefix=when_mentioned,
             intents=intents,
