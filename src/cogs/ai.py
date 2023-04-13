@@ -143,7 +143,7 @@ class AiModeration(Cog):
         message_id = msg["message_id"]
 
         try:
-            guild = await self.bot.get_guild(msg["channel_id"])
+            guild = await self.bot.fetch_guild(msg["channel_id"])
             author = guild.get_member(msg["author_id"])
             score = await self.perspective.score(
                 msg["content"],
