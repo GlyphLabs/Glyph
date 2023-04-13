@@ -71,7 +71,14 @@ class PurpBot(Bot):
         await self.change_presence(activity=Game("/info"))
 
     async def getch_channel(self, channel_id: int):
-        return self.get_channel(channel_id) or await self.fetch_channel(channel_id)
+        if channel := self.get_channel(channel_id):
+            return channel
+        else:
+            try:
+                return await self.fetch_channel(channel_id)
+            except Exception:
+                return None
+        # return self.get_channel(channel_id) or await self.fetch_channel(channel_id)
 
     async def setup_bot(self):
         if self.database_url:

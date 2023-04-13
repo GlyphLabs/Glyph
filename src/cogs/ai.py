@@ -9,7 +9,19 @@ from typing import Deque
 from perspective import Attribute
 from datetime import timedelta
 from logging import getLogger
+from dataclasses import dataclass
 logger = getLogger(__name__)
+
+
+@dataclass
+class AiPartialMessage:
+    guild_id: int
+    channel_id: int
+    content: str
+    message_id: int
+    reports_channel: int
+    author_id: int
+
 
 class AiModeration(Cog):
     def __init__(self, bot: PurpBot):
@@ -18,29 +30,29 @@ class AiModeration(Cog):
         self.perspective = self.bot.perspective
         self.scan_messages.start()
 
-    def build_view(self, message: Message, disabled: bool = False) -> View:
+    def build_view(self, message: AiPartialMessage, disabled: bool = False) -> View:
         delete_button: Button = Button(
             style=ButtonStyle.gray,
             label="Delete",
-            custom_id=f"flagged_message_options:delete-{message.channel.id}-{message.id}",
+            custom_id=f"flagged_message_options:delete-{message.channel_id}-{message.message_id}",
             disabled=disabled,
         )
         timeout_button: Button = Button(
             style=ButtonStyle.gray,
             label="Timeout [1d]",
-            custom_id=f"flagged_message_options:timeout-{message.channel.id}-{message.id}",
+            custom_id=f"flagged_message_options:timeout-{message.channel_id}-{message.message_id}",
             disabled=disabled,
         )
         kick_button: Button = Button(
             style=ButtonStyle.red,
             label="Kick",
-            custom_id=f"flagged_message_options:kick-{message.channel.id}-{message.id}",
+            custom_id=f"flagged_message_options:kick-{message.channel_id}-{message.message_id}",
             disabled=disabled,
         )
         ban_button: Button = Button(
             style=ButtonStyle.red,
             label="Ban",
-            custom_id=f"flagged_message_options:ban-{message.channel.id}-{message.id}",
+            custom_id=f"flagged_message_options:ban-{message.channel_id}-{message.message_id}",
             disabled=disabled,
         )
         jump_button: Button = Button(
@@ -49,7 +61,8 @@ class AiModeration(Cog):
             url=message.jump_url,
             disabled=disabled,
         )
-        items = (jump_button, delete_button, timeout_button, kick_button, ban_button)
+        items = (jump_button, delete_button,
+                 timeout_button, kick_button, ban_button)
         return View(*items, timeout=None)
 
     @Cog.listener()
@@ -99,6 +112,8 @@ class AiModeration(Cog):
         if message.author.bot or not message.guild:
             return
 
+        if not message.content:
+            return
         guild_settings = await self.bot.db.get_guild_settings(message.guild.id)
         if not guild_settings or not guild_settings.ai_reports_channel:
             return
@@ -106,10 +121,12 @@ class AiModeration(Cog):
         self.messages.append(
             packb(
                 {
+                    "guild_id": message.guild.id,
                     "channel_id": message.channel.id,
                     "content": message.content,
                     "message_id": message.id,
                     "reports_channel": guild_settings.ai_reports_channel,
+                    "author_id": message.author.id
                 }
             )
         )
@@ -121,46 +138,51 @@ class AiModeration(Cog):
         if not self.messages:
             return
 
-        msg = unpackb(self.messages[0])
+        msg = unpackb(self.messages.popleft())
 
-        channel = await self.bot.getch_channel(msg["channel_id"])
-        message = await channel.fetch_message(msg["message_id"])
-        score = await self.perspective.score(
-            message.content,
-            [
-                Attribute.toxicity,
-                Attribute.severe_toxicity,
-                Attribute.insult,
-                Attribute.threat,
-            ],
-        )
-        scores = (score.toxicity, score.severe_toxicity, score.insult, score.threat)
-        avgscore = sum(scores) / 4
-        if avgscore > 0.5 or any(score > 0.7 for score in scores):
-            reports_channel = await self.bot.getch_channel(msg["reports_channel"])
-            embed = (
-                Embed(
-                    title="Message Flagged",
-                    description=f"Average rating was **{round(avgscore*100)}%**.\nToxicity rating was **{round(score.toxicity*100)}%**.\nSevere toxicity rating was **{round(score.severe_toxicity*100)}%**.\nInsult rating was **{round(score.insult*100)}%**.\nThreat rating was **{round(score.threat*100)}%**.",
-                    color=0x6B74C7,
-                )
-                .set_author(
-                    name=f"{message.author} ({message.author.id})",
-                    icon_url=message.author.display_avatar.url,
-                )
-                .set_footer(
-                    text=f"Message ID: {message.id} • Author ID: {message.author.id}"
-                )
+        message_id = msg["message_id"]
+
+        try:
+            guild = await self.bot.get_guild(msg["channel_id"])
+            author = guild.get_member(msg["author_id"])
+            score = await self.perspective.score(
+                msg["content"],
+                [
+                    Attribute.toxicity,
+                    Attribute.severe_toxicity,
+                    Attribute.insult,
+                    Attribute.threat,
+                ],
             )
-            await reports_channel.send(embed=embed, view=self.build_view(message))
-        self.messages.popleft()
+            scores = (score.toxicity, score.severe_toxicity,
+                    score.insult, score.threat)
+            avgscore = sum(scores) / 4
+            if avgscore > 0.5 or any(score > 0.7 for score in scores):
+                reports_channel = await self.bot.getch_channel(msg["reports_channel"])
+                embed = (
+                    Embed(
+                        title="Message Flagged",
+                        description=f"Average rating was **{round(avgscore*100)}%**.\nToxicity rating was **{round(score.toxicity*100)}%**.\nSevere toxicity rating was **{round(score.severe_toxicity*100)}%**.\nInsult rating was **{round(score.insult*100)}%**.\nThreat rating was **{round(score.threat*100)}%**.",
+                        color=0x6B74C7,
+                    )
+                    .set_author(
+                        name=f"{author} ({author.id})",
+                        icon_url=author.display_avatar.url,
+                    )
+                    .set_footer(
+                        text=f"Message ID: {message_id} • Author ID: {author.id}"
+                    )
+                )
+                await reports_channel.send(embed=embed, view=self.build_view(AiPartialMessage(**msg)))
+        except Exception: # don't die if you fail once
+            pass
 
     @scan_messages.error
     async def scan_msgs_error(self, error: Exception):
-        logger.error(f"error while scanning message {unpackb(self.messages.popleft())}")
+        logger.error(
+            f"error while scanning message {unpackb(self.messages.popleft())}")
         if not self.scan_messages.is_running():
             self.scan_messages.start()
-        
 
 
 def setup(bot: PurpBot):
