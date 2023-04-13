@@ -58,7 +58,7 @@ class AiModeration(Cog):
         jump_button: Button = Button(
             style=ButtonStyle.url,
             label="Jump to message",
-            url=message.jump_url,
+            url=f"https://discord.com/channels/{message.guild_id}/{message.channel_id}/{message.message_id}",
             disabled=disabled,
         )
         items = (jump_button, delete_button,
