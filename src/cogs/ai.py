@@ -174,8 +174,8 @@ class AiModeration(Cog):
                     )
                 )
                 await reports_channel.send(embed=embed, view=self.build_view(AiPartialMessage(**msg)))
-        except Exception: # don't die if you fail once
-            pass
+        except Exception as e: # don't die if you fail once
+            logger.error(f"error while scanning message {message_id}: {e}")
 
     @scan_messages.error
     async def scan_msgs_error(self, error: Exception):
