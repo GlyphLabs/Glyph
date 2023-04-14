@@ -7,6 +7,7 @@ from asyncpg import create_pool, Pool
 from perspective.models import Perspective
 from src.db import Database
 from logging import info, error, getLogger, basicConfig, INFO
+from fasttext import load_model
 basicConfig(format='[%(levelname)s] %(asctime)s: %(message)s', level=INFO)
 getLogger("discord.py")
 
@@ -20,6 +21,7 @@ class PurpBot(Bot):
         "db",
         "perspective",
         "scanned_messages_count",
+        "ai_mod_model"
     )
 
     def __init__(
@@ -53,6 +55,8 @@ class PurpBot(Bot):
             max_messages=None,
         )
         info("initialized bot")
+
+        self.ai_mod_model = load_model("src/cogs/fasttext_model.bin")
 
         for cog in ("fun", "moderation", "utils", "ai", "config", "error"):
             try:
