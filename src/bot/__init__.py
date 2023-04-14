@@ -33,7 +33,7 @@ class PurpBot(Bot):
     ):
         intents = Intents.default()
         intents.message_content = True
-        intents.members = True
+        # intents.members = True
 
         self.pool: Optional[Pool]
         self.db: Database
@@ -46,13 +46,14 @@ class PurpBot(Bot):
             self.perspective = Perspective(perspective_key)
 
         member_cache_flags = MemberCacheFlags.none()
-        member_cache_flags.interaction = True
+        # member_cache_flags.interaction = True
         super().__init__(
             command_prefix=when_mentioned,
             intents=intents,
             debug_guilds=[1050102412104437801] if test_mode else None,
             member_cache_flags=member_cache_flags,
             max_messages=None,
+            chunk_guilds_at_startup=False
         )
         info("initialized bot")
 
