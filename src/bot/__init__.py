@@ -4,9 +4,10 @@ from aiofiles import open as aopen
 from statcord import StatcordClient
 from typing import Optional, List, Tuple
 from asyncpg import create_pool, Pool
-from perspective.models import Perspective
+# from perspective.models import Perspective
 from src.db import Database
 from logging import info, error, getLogger, basicConfig, INFO
+from fasttext import load_model
 basicConfig(format='[%(levelname)s] %(asctime)s: %(message)s', level=INFO)
 getLogger("discord.py")
 
@@ -18,20 +19,20 @@ class PurpBot(Bot):
         "pool",
         "database_url",
         "db",
-        "perspective",
         "scanned_messages_count",
+        "ai_mod_model"
     )
 
     def __init__(
         self,
         statcord_key: Optional[str],
         database_url: Optional[str] = None,
-        perspective_key: Optional[str] = None,
+        # perspective_key: Optional[str] = None,
         test_mode: Optional[bool] = False,
     ):
         intents = Intents.default()
         intents.message_content = True
-        intents.members = True
+        # intents.members = True
 
         self.pool: Optional[Pool]
         self.db: Database
@@ -40,19 +41,22 @@ class PurpBot(Bot):
         self.database_url = database_url
         self.scanned_messages_count: int = 0
 
-        if perspective_key:
-            self.perspective = Perspective(perspective_key)
+        # if perspective_key:
+        #     self.perspective = Perspective(perspective_key)
 
         member_cache_flags = MemberCacheFlags.none()
-        member_cache_flags.interaction = True
+        # member_cache_flags.interaction = True
         super().__init__(
             command_prefix=when_mentioned,
             intents=intents,
             debug_guilds=[1050102412104437801] if test_mode else None,
             member_cache_flags=member_cache_flags,
             max_messages=None,
+            chunk_guilds_at_startup=False
         )
         info("initialized bot")
+
+        self.ai_mod_model = load_model("src/cogs/fasttext_model.bin")
 
         for cog in ("fun", "moderation", "utils", "ai", "config", "error"):
             try:
