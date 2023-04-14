@@ -6,11 +6,9 @@ from discord.ext.tasks import loop
 from collections import deque
 from ormsgpack import packb, unpackb
 from typing import Deque
-from perspective import Attribute
 from datetime import timedelta
 from logging import getLogger
 from dataclasses import dataclass
-from profanity_check import predict_prob
 logger = getLogger(__name__)
 
 
@@ -28,7 +26,7 @@ class AiModeration(Cog):
     def __init__(self, bot: PurpBot):
         self.bot = bot
         self.messages: Deque[bytes] = deque()
-        self.perspective = self.bot.perspective
+        # self.perspective = self.bot.perspective
         self.scan_messages.start()
 
     def build_view(self, message: AiPartialMessage, disabled: bool = False) -> View:

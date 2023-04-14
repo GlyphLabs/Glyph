@@ -4,7 +4,7 @@ from aiofiles import open as aopen
 from statcord import StatcordClient
 from typing import Optional, List, Tuple
 from asyncpg import create_pool, Pool
-from perspective.models import Perspective
+# from perspective.models import Perspective
 from src.db import Database
 from logging import info, error, getLogger, basicConfig, INFO
 from fasttext import load_model
@@ -19,7 +19,6 @@ class PurpBot(Bot):
         "pool",
         "database_url",
         "db",
-        "perspective",
         "scanned_messages_count",
         "ai_mod_model"
     )
@@ -28,7 +27,7 @@ class PurpBot(Bot):
         self,
         statcord_key: Optional[str],
         database_url: Optional[str] = None,
-        perspective_key: Optional[str] = None,
+        # perspective_key: Optional[str] = None,
         test_mode: Optional[bool] = False,
     ):
         intents = Intents.default()
@@ -42,8 +41,8 @@ class PurpBot(Bot):
         self.database_url = database_url
         self.scanned_messages_count: int = 0
 
-        if perspective_key:
-            self.perspective = Perspective(perspective_key)
+        # if perspective_key:
+        #     self.perspective = Perspective(perspective_key)
 
         member_cache_flags = MemberCacheFlags.none()
         # member_cache_flags.interaction = True
