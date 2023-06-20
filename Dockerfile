@@ -15,7 +15,7 @@ RUN /venv/bin/pip install --disable-pip-version-check -r /requirements.txt
 # RUN /venv/bin/pip install ./fastText
 
 FROM gcr.io/distroless/python3-debian11
-# COPY --from=install-fasttext /venv /venv
+COPY --from=build-venv /venv /venv
 COPY . /app
 WORKDIR /app
 ENTRYPOINT ["/venv/bin/python3", "main.py"]
