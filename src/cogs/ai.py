@@ -152,7 +152,7 @@ class AiModeration(Cog):
 
             score = {label.replace("__label__",""): score for label, score in zip(_score[0][0], _score[1][0])}
             print("a")
-            avgscore = sum(score.values())/len(score.keys())
+            avgscore = sum([i for i in score.values() if i["non_toxic"]])/(len(score.keys())-1)
             logger.info(f"message {msg['message_id']} has probability: {score}")
             if score.get("non_toxic", 0) < 0.5:
                 reports_channel = await self.bot.getch_channel(msg["reports_channel"])
