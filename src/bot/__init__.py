@@ -56,7 +56,7 @@ class PurpBot(Bot):
         )
         info("initialized bot")
 
-        self.ai_mod_model = load_model("src/cogs/fasttext_model.bin")
+        self.ai_mod_model = load_model("src/cogs/model.bin", preload_vectors=False)
 
         for cog in ("fun", "moderation", "utils", "ai", "config", "error"):
             try:
