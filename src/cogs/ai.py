@@ -151,15 +151,13 @@ class AiModeration(Cog):
             logger.info(_score)
 
             score = {label.replace("__label__",""): score for label, score in zip(_score[0][0], _score[1][0])}
-            print("a")
-            avgscore = sum(score.values())/len(score.keys())
             logger.info(f"message {msg['message_id']} has probability: {score}")
             if score.get("non_toxic", 0) < 0.5:
                 reports_channel = await self.bot.getch_channel(msg["reports_channel"])
                 embed = (
                     Embed(
                         title="Message Flagged",
-                        description=f"Average rating was **{round(avgscore*100)}%**.\n"+'\n'.join(f"`{f}`: **{round(s*100)}%**" for f, s in list(i for i in score.items())[:3]),
+                        description=f"Highest score was **{next(iter(score.keys()))}** with a percentage of **{round(next(iter(score.values()))*100)}%**.\n"+'\n'.join(f"`{f}`: **{round(s*100)}%**" for f, s in list(i for i in score.items())[1:4]),
                         color=0x6B74C7,
                     )
                     .set_author(
