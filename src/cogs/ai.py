@@ -157,7 +157,7 @@ class AiModeration(Cog):
                 embed = (
                     Embed(
                         title="Message Flagged",
-                        description=f"Highest score was **{next(iter(score.keys()))} with a percentage of {round(next(iter(score.values()))*100)}%**.\n"+'\n'.join(f"`{f}`: **{round(s*100)}%**" for f, s in list(i for i in score.items())[1:4]),
+                        description=f"Highest score was **{next(iter(score.keys()))}** with a percentage of **{round(next(iter(score.values()))*100)}%**.\n"+'\n'.join(f"`{f}`: **{round(s*100)}%**" for f, s in list(i for i in score.items())[1:4]),
                         color=0x6B74C7,
                     )
                     .set_author(
