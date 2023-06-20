@@ -10,12 +10,12 @@ COPY pyproject.toml poetry.lock /
 RUN /venv/bin/poetry export --without-hashes --format requirements.txt --output /requirements.txt
 RUN /venv/bin/pip install --disable-pip-version-check -r /requirements.txt
 
-FROM build-venv as install-fasttext
-RUN git clone https://github.com/facebookresearch/fastText.git
-RUN /venv/bin/pip install ./fastText
+# FROM build-venv as install-fasttext
+# RUN git clone https://github.com/facebookresearch/fastText.git
+# RUN /venv/bin/pip install ./fastText
 
 FROM gcr.io/distroless/python3-debian11
-COPY --from=install-fasttext /venv /venv
+# COPY --from=install-fasttext /venv /venv
 COPY . /app
 WORKDIR /app
 ENTRYPOINT ["/venv/bin/python3", "main.py"]
