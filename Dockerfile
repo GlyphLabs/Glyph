@@ -1,6 +1,4 @@
-FROM debian:11-slim AS build
-RUN apt-get update
-RUN apt-get install --no-install-suggests --no-install-recommends --yes python3-venv libpython3-dev git
+FROM python:3.11.4-slim-bullseye AS build
 RUN python3 -m venv /venv
 RUN /venv/bin/pip install "poetry==1.5.1"
 
