@@ -13,4 +13,5 @@ FROM build-poetry AS install-deps
 RUN python3 -m pip install --disable-pip-version-check -r /requirements.txt
 
 FROM install-deps AS runtime
+COPY . /app
 CMD ["python3", "main.py"]
