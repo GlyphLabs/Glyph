@@ -1,5 +1,6 @@
 FROM python:3.11.4-slim-bullseye AS build
 RUN python3 -m venv /venv
+WORKDIR /app
 
 FROM build AS install-poetry
 RUN /venv/bin/pip install "poetry==1.5.1"
