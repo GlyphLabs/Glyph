@@ -41,10 +41,7 @@ class AiModeration(Cog):
         # self.perspective = self.bot.perspective
         self.scan_messages.start()
 
-    def build_view(self, partial_message: Message, disabled: bool = False) -> View:
-        message = AiPartialMessage.from_message(
-            partial_message
-        )
+    def build_view(self, message: AiPartialMessage, disabled: bool = False) -> View:
         delete_button: Button = Button(
             style=ButtonStyle.gray,
             label="Delete",
@@ -117,7 +114,7 @@ class AiModeration(Cog):
             )
         await interaction.message.edit(
             embed=interaction.message.embeds[0],
-            view=self.build_view(message, disabled=True),
+            view=self.build_view(AiPartialMessage.from_message(message), disabled=True),
         )
 
     @Cog.listener()
