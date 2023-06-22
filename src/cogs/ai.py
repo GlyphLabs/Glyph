@@ -43,7 +43,7 @@ class AiModeration(Cog):
 
     def build_view(self, partial_message: Message, disabled: bool = False) -> View:
         message = AiPartialMessage.from_message(
-            partial_message, self.bot.reports_channel
+            partial_message
         )
         delete_button: Button = Button(
             style=ButtonStyle.gray,
