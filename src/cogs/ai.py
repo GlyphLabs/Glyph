@@ -5,7 +5,7 @@ from discord.ui import View, Button
 from discord.ext.tasks import loop
 from collections import deque
 from ormsgpack import packb, unpackb
-from typing import Deque
+from typing import Deque, Optional
 from datetime import timedelta
 from logging import getLogger
 from dataclasses import dataclass
@@ -18,8 +18,19 @@ class AiPartialMessage:
     channel_id: int
     content: str
     message_id: int
-    reports_channel: int
+    reports_channel: Optional[int]
     author_id: int
+
+    @classmethod
+    def from_message(cls, message: Message, reports_channel: Optional[int]):
+        return cls(
+            guild_id=message.guild.id,
+            channel_id=message.channel.id,
+            content=message.content,
+            message_id=message.id,
+            reports_channel=reports_channel,
+            author_id=message.author.id,
+        )
 
 
 class AiModeration(Cog):
@@ -29,7 +40,8 @@ class AiModeration(Cog):
         # self.perspective = self.bot.perspective
         self.scan_messages.start()
 
-    def build_view(self, message: AiPartialMessage, disabled: bool = False) -> View:
+    def build_view(self, partial_message: Message, disabled: bool = False) -> View:
+        message = AiPartialMessage.from_message(partial_message, self.bot.reports_channel)
         delete_button: Button = Button(
             style=ButtonStyle.gray,
             label="Delete",
