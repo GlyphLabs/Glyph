@@ -19,8 +19,8 @@ class AiPartialMessage:
     channel_id: int
     content: str
     message_id: int
-    reports_channel: Optional[int] = None
     author_id: int
+    reports_channel: Optional[int] = None
 
     @classmethod
     def from_message(cls, message: Message, reports_channel: Optional[int] = None):
