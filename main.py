@@ -10,7 +10,6 @@ load_dotenv()
 bot = PurpBot(
     statcord_key=environ.get("STATCORD_KEY"),
     database_url=environ.get("DATABASE_URL"),
-    # perspective_key=environ.get("PERSPECTIVE_KEY"),
     test_mode=bool(int(environ.get("TEST_MODE", 0))),
 )
 bot.remove_command("help")
@@ -62,4 +61,3 @@ async def poll(ctx, question: Option(str), a: Option(str), b: Option(str)):
 bot.load_extension("jishaku")
 bot.loop.create_task(bot.setup_bot())
 bot.run(environ.get("TOKEN"))
-# asyncio.run(bot.db.close())
