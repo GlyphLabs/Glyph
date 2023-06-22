@@ -9,6 +9,7 @@ from typing import Deque, Optional
 from datetime import timedelta
 from logging import getLogger
 from dataclasses import dataclass
+
 logger = getLogger(__name__)
 
 
@@ -41,7 +42,9 @@ class AiModeration(Cog):
         self.scan_messages.start()
 
     def build_view(self, partial_message: Message, disabled: bool = False) -> View:
-        message = AiPartialMessage.from_message(partial_message, self.bot.reports_channel)
+        message = AiPartialMessage.from_message(
+            partial_message, self.bot.reports_channel
+        )
         delete_button: Button = Button(
             style=ButtonStyle.gray,
             label="Delete",
@@ -72,8 +75,7 @@ class AiModeration(Cog):
             url=f"https://discord.com/channels/{message.guild_id}/{message.channel_id}/{message.message_id}",
             disabled=disabled,
         )
-        items = (jump_button, delete_button,
-                 timeout_button, kick_button, ban_button)
+        items = (jump_button, delete_button, timeout_button, kick_button, ban_button)
         return View(*items, timeout=None)
 
     @Cog.listener()
@@ -137,39 +139,43 @@ class AiModeration(Cog):
                     "content": message.content,
                     "message_id": message.id,
                     "reports_channel": guild_settings.ai_reports_channel,
-                    "author_id": message.author.id
+                    "author_id": message.author.id,
                 }
             )
         )
 
         self.bot.scanned_messages_count += 1
 
-    @loop(seconds=1.1)  # abide by perspective ratelimits
+    @loop(seconds=0.01)
     async def scan_messages(self):
         if not self.messages:
             return
 
         msg = unpackb(self.messages.popleft())
         content = msg["content"]
-
         message_id = msg["message_id"]
 
         try:
-            guild = await self.bot.fetch_guild(msg["guild_id"])
-            author = await guild.fetch_member(msg["author_id"])
-            _score = self.bot.ai_mod_model.predict(
-                [msg["content"]], k=6
-            )
+            _score = self.bot.ai_mod_model.predict([msg["content"]], k=6)
             logger.info(_score)
 
-            score = {label.replace("__label__",""): score for label, score in zip(_score[0][0], _score[1][0])}
+            score = {
+                label.replace("__label__", ""): score
+                for label, score in zip(_score[0][0], _score[1][0])
+            }
             logger.info(f"message {msg['message_id']} has probability: {score}")
             if score.get("non_toxic", 0) < 0.5:
+                guild = await self.bot.fetch_guild(msg["guild_id"])
+                author = await guild.fetch_member(msg["author_id"])
                 reports_channel = await self.bot.getch_channel(msg["reports_channel"])
                 embed = (
                     Embed(
                         title="Message Flagged",
-                        description=f"Highest score was **{next(iter(score.keys()))}** with a percentage of **{round(next(iter(score.values()))*100)}%**.\n"+'\n'.join(f"`{f}`: **{round(s*100)}%**" for f, s in list(i for i in score.items())[1:4]),
+                        description=f"Highest score was **{next(iter(score.keys()))}** with a percentage of **{round(next(iter(score.values()))*100)}%**.\n"
+                        + "\n".join(
+                            f"`{f}`: **{round(s*100)}%**"
+                            for f, s in list(i for i in score.items())[1:4]
+                        ),
                         color=0x6B74C7,
                     )
                     .set_author(
@@ -181,16 +187,18 @@ class AiModeration(Cog):
                     )
                     .add_field(
                         name="Message Content",
-                        value=f'||{content[:100]}{("..." if len(content) > 100 else "")}||')
+                        value=f'||{content[:100]}{("..." if len(content) > 100 else "")}||',
                     )
-                await reports_channel.send(embed=embed, view=self.build_view(AiPartialMessage(**msg)))
-        except Exception as e: # don't die if you fail once
+                )
+                await reports_channel.send(
+                    embed=embed, view=self.build_view(AiPartialMessage(**msg))
+                )
+        except Exception as e:  # don't die if you fail once
             logger.error(f"error while scanning message {message_id}: {e}")
 
     @scan_messages.error
     async def scan_msgs_error(self, error: Exception):
-        logger.error(
-            f"error while scanning message {unpackb(self.messages.popleft())}")
+        logger.error(f"error while scanning message {unpackb(self.messages.popleft())}")
         raise error
         if not self.scan_messages.is_running():
             self.scan_messages.start()
