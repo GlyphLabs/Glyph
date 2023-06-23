@@ -1,6 +1,6 @@
 from __future__ import annotations
 from cachetools import TTLCache
-from ormsgpack import packb, unpackb
+from msgpack import packb, unpackb
 from typing import Optional
 from asyncpg import Pool
 from datetime import datetime
