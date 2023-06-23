@@ -129,7 +129,7 @@ class AiModeration(Cog):
 
         logger.debug(f"adding message {message.id} to scanning queue")
 
-        self.scan_message(message, guild_settings.ai_reports_channel)
+        await self.scan_message(message, guild_settings.ai_reports_channel)
         self.bot.scanned_messages_count += 1
 
     async def scan_message(self, msg: Message, reports_channel: int):
