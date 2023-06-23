@@ -144,7 +144,7 @@ class AiModeration(Cog):
             if score.get("non_toxic", 0) < 0.5:
                 guild = await self.bot.fetch_guild(msg.guild.id)
                 author = await guild.fetch_member(msg.author.id)
-                reports_channel = await self.bot.getch_channel(msg["reports_channel"])
+                reports_channel = await self.bot.getch_channel(reports_channel)
                 embed = (
                     Embed(
                         title="Message Flagged",
