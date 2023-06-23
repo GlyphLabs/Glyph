@@ -1,4 +1,4 @@
-from discord import Intents, Game, MemberCacheFlags
+from discord import Intents, Game, MemberCacheFlags, TextChannel
 from discord.ext.commands import when_mentioned, Bot
 from statcord import StatcordClient
 from typing import Optional, List, Tuple
@@ -68,7 +68,7 @@ class PurpBot(Bot):
         info("PurpBot is online!")
         await self.change_presence(activity=Game("/info"))
 
-    async def getch_channel(self, channel_id: int):
+    async def getch_channel(self, channel_id: int) -> TextChannel:
         if channel := self.get_channel(channel_id):
             return channel
         else:

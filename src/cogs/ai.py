@@ -37,9 +37,7 @@ class AiPartialMessage:
 class AiModeration(Cog):
     def __init__(self, bot: PurpBot):
         self.bot = bot
-        self.messages: Deque[bytes] = deque()
         # self.perspective = self.bot.perspective
-        self.scan_messages.start()
 
     def build_view(self, message: AiPartialMessage, disabled: bool = False) -> View:
         delete_button: Button = Button(
@@ -124,46 +122,31 @@ class AiModeration(Cog):
 
         if not message.content:
             return
+
         guild_settings = await self.bot.db.get_guild_settings(message.guild.id)
         if not guild_settings or not guild_settings.ai_reports_channel:
             return
-        logger.debug(f"adding message {message.id} to scanning queue")
-        self.messages.append(
-            packb(
-                {
-                    "guild_id": message.guild.id,
-                    "channel_id": message.channel.id,
-                    "content": message.content,
-                    "message_id": message.id,
-                    "reports_channel": guild_settings.ai_reports_channel,
-                    "author_id": message.author.id,
-                }
-            )
-        )
 
+        logger.debug(f"adding message {message.id} to scanning queue")
+
+        self.scan_message(message, guild_settings.ai_reports_channel)
         self.bot.scanned_messages_count += 1
 
-    @loop(seconds=0.01)
-    async def scan_messages(self):
-        if not self.messages:
-            return
-
-        msg = unpackb(self.messages.popleft())
-        content = msg["content"]
-        message_id = msg["message_id"]
-
+    async def scan_message(self, msg: Message, reports_channel: int):
+        content = msg.content
+        message_id = msg.id
         try:
-            _score = self.bot.ai_mod_model.predict([msg["content"]], k=6)
+            _score = self.bot.ai_mod_model.predict(content, k=6)
             logger.info(_score)
 
             score = {
                 label.replace("__label__", ""): score
                 for label, score in zip(_score[0][0], _score[1][0])
             }
-            logger.info(f"message {msg['message_id']} has probability: {score}")
+            logger.info(f"message {message_id} has probability: {score}")
             if score.get("non_toxic", 0) < 0.5:
-                guild = await self.bot.fetch_guild(msg["guild_id"])
-                author = await guild.fetch_member(msg["author_id"])
+                guild = await self.bot.fetch_guild(msg.guild.id)
+                author = await guild.fetch_member(msg.author.id)
                 reports_channel = await self.bot.getch_channel(msg["reports_channel"])
                 embed = (
                     Embed(
@@ -188,17 +171,11 @@ class AiModeration(Cog):
                     )
                 )
                 await reports_channel.send(
-                    embed=embed, view=self.build_view(AiPartialMessage(**msg))
+                    embed=embed,
+                    view=self.build_view(AiPartialMessage.from_message(msg)),
                 )
         except Exception as e:  # don't die if you fail once
             logger.error(f"error while scanning message {message_id}: {e}")
-
-    @scan_messages.error
-    async def scan_msgs_error(self, error: Exception):
-        logger.error(f"error while scanning message {unpackb(self.messages.popleft())}")
-        raise error
-        if not self.scan_messages.is_running():
-            self.scan_messages.start()
 
 
 def setup(bot: PurpBot):
