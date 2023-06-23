@@ -2,10 +2,7 @@ from src.bot import PurpBot
 from discord.ext.commands import Cog
 from discord import Message, Embed, ButtonStyle, Interaction
 from discord.ui import View, Button
-from discord.ext.tasks import loop
-from collections import deque
-from ormsgpack import packb, unpackb
-from typing import Deque, Optional
+from typing import Optional
 from datetime import timedelta
 from logging import getLogger
 from dataclasses import dataclass
@@ -141,7 +138,7 @@ class AiModeration(Cog):
 
             score = {
                 label.replace("__label__", ""): score
-                for label, score in zip(_score[0][0], _score[1][0])
+                for label, score in zip(_score[0], _score[1])
             }
             logger.info(f"message {message_id} has probability: {score}")
             if score.get("non_toxic", 0) < 0.5:
