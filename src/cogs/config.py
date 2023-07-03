@@ -1,7 +1,7 @@
 from src.bot import PurpBot
 from discord.ext.commands import Cog
 from discord.commands import SlashCommandGroup
-from discord import Option, ApplicationContext, TextChannel, Embed
+from discord import Option, ApplicationContext, TextChannel, Embed, Permissions
 from src.db import GuildSettings
 from src.views import CreateTicket
 
@@ -31,6 +31,7 @@ class Config(Cog):
             required=True,
         ),
     ):
+        reports_channel: TextChannel = reports_channel  # typing
         settings = await self.bot.db.get_guild_settings(ctx.guild.id)
         if not settings:
             settings = GuildSettings(
@@ -38,13 +39,23 @@ class Config(Cog):
             )
         else:
             settings.ai_reports_channel = reports_channel.id
+        perms: Permissions = await reports_channel.permissions_for(ctx.guild.me)
+        if not perms.send_messages:
+            await ctx.respond(
+                embed=Embed(
+                    description="I don't have permissions to send messages in that channel.",
+                    color=0xFF0000,
+                )
+                .set_author(name="Error")
+                .set_footer(text="Your settings were not saved.")
+            )
+            return
         await self.bot.db.set_guild_settings(ctx.guild.id, settings)
         await ctx.respond(
             embed=Embed(
-                title="AI Moderation Enabled",
                 description=f"AI moderation has been enabled for this server. Reports will be sent to {reports_channel.mention}.",
                 color=0x6B74C7,
-            )
+            ).set_author(name="AI Moderation Enabled")
         )
 
     @ai_config.command(
