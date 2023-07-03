@@ -169,25 +169,14 @@ class Utils(Cog):
     @slash_command(name="help", description="Help Command")
     async def _help(self, ctx: ApplicationContext):
         embed = Embed(title="PurpBot Help", color=0x6B74C7)
-        embed.add_field(
-            name="Moderation",
-            value="`/ban`, `/kick`, `/warn`, `/unwarn`, `/timeout`, `/purge`, `/addrole`, `/removerole`",
-            inline=False,
-        )
-        embed.add_field(
-            name="Utility",
-            value="`/hug`, `/secret`, `/send`, `/embed`, `/poll`, `/vote`, `/reactionroles`, `/userinfo`, `/calc`, `/search`",
-            inline=False,
-        )
-        embed.add_field(
-            name="Information",
-            value="`/ping`, `/warns`, `/serverinfo`, `/membercount`, `/guildcount`, `/invite`",
-            inline=False,
-        )
-        embed.add_field(
-            name="Webhooks", value="`/embwebhook`, `/msgwebhook`", inline=False
-        )
-        embed.add_field(name="Tickets", value="`/ticket-config`", inline=False)
+        for name, cog in self.bot.cogs.items():
+            if not cog.get_commands() or name.lower() == "jishaku":
+                continue
+            embed.add_field(
+                name=name,
+                value=", ".join(f"`{c.name}`" for c in cog.get_commands()),
+                inline=False,
+            )
         await ctx.respond(embed=embed)
 
     @slash_command(name="secret", description="Try it out for yourself")
