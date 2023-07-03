@@ -6,6 +6,7 @@ from asyncpg import create_pool, Pool
 from src.db import Database
 from logging import info, error, getLogger, basicConfig, INFO
 from fasttext import load_model
+from asyncio import sleep
 
 basicConfig(format="[%(levelname)s] %(asctime)s: %(message)s", level=INFO)
 getLogger("discord.py")
@@ -20,7 +21,6 @@ class PurpBot(Bot):
         "database_url",
         "db",
         "scanned_messages_count",
-        "ai_mod_model",
     )
 
     def __init__(
@@ -50,8 +50,6 @@ class PurpBot(Bot):
         )
         info("initialized bot")
 
-        self.ai_mod_model = load_model("src/cogs/model.bin")
-
         for cog in ("fun", "moderation", "utils", "ai", "config", "error"):
             try:
                 info(
@@ -79,7 +77,22 @@ class PurpBot(Bot):
 
     async def setup_bot(self):
         if self.database_url:
-            self.pool: Pool = await create_pool(self.database_url)
+            retry = 1
+            while True:
+                try:
+                    self.pool: Pool = await create_pool(self.database_url)
+                    break
+                except Exception as e:
+                    if retry >= 3:
+                        error("failed to connect to database, exiting")
+                        await self.wait_until_ready()
+                        await self.close()
+                        raise e
+                        # exit without raising error
+
+                    retry += 1
+                    info("failed to connect to database, retrying in 3 seconds")
+                    await sleep(3)
             self.db = Database(self.pool)
 
         async with self.pool.acquire() as conn:
