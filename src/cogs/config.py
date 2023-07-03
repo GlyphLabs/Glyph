@@ -39,14 +39,14 @@ class Config(Cog):
             )
         else:
             settings.ai_reports_channel = reports_channel.id
-        perms: Permissions = await reports_channel.permissions_for(ctx.guild.me)
+        perms: Permissions = reports_channel.permissions_for(ctx.guild.me)
         if not perms.send_messages:
             await ctx.respond(
                 embed=Embed(
                     description="I don't have permissions to send messages in that channel.",
                     color=0xFF0000,
                 )
-                .set_author(name="Error")
+                .set_author(name="Uh oh!")
                 .set_footer(text="Your settings were not saved.")
             )
             return
