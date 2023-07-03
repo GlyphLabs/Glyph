@@ -5,7 +5,9 @@ from discord.ui import View, Button
 from typing import Optional
 from datetime import timedelta
 from logging import getLogger
+from fasttext import load_model
 from dataclasses import dataclass
+from discord.ext.tasks import loop
 
 logger = getLogger(__name__)
 
@@ -32,9 +34,19 @@ class AiPartialMessage:
 
 
 class AiModeration(Cog):
+    __slots__ = ("bot", "fasttext")
+
     def __init__(self, bot: PurpBot):
         self.bot = bot
+        self.unload_model.start()
+        self.fasttext = load_model("src/cogs/model.bin")
         # self.perspective = self.bot.perspective
+
+    @loop(minutes=3)
+    async def unload_model(self):
+        if self.fasttext:
+            self.fasttext = None
+            logger.info("unloaded fasttext model")
 
     def build_view(self, message: AiPartialMessage, disabled: bool = False) -> View:
         delete_button: Button = Button(
@@ -114,6 +126,9 @@ class AiModeration(Cog):
 
     @Cog.listener()
     async def on_message(self, message: Message):
+        if not self.fasttext:
+            self.fasttext = load_model("src/cogs/model.bin")
+
         if message.author.bot or not message.guild:
             return
 
@@ -133,7 +148,7 @@ class AiModeration(Cog):
         content = msg.content
         message_id = msg.id
         try:
-            _score = self.bot.ai_mod_model.predict(content, k=6)
+            _score = self.fasttext.predict(content, k=6)
             logger.info(_score)
 
             score = {
