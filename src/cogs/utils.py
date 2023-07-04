@@ -266,46 +266,5 @@ class Utils(Cog):
         embed.set_image(url=servericon)
         await ctx.respond(embed=embed)
 
-    @slash_command(name="reactionroles", description="Creates a reaction role")
-    async def reactionroles(
-        self,
-        ctx: ApplicationContext,
-        role: Option(Role),
-        message_id: Option(Message),
-        emoji: Option(str),
-    ):
-        await message_id.add_reaction(emoji)
-        self.bot.reaction_roles.append(
-            (role.id, message_id.id, str(emoji.encode("utf-8")))
-        )
-        async with aopen("reaction_roles.txt", mode="a") as file:
-            emoji_utf = emoji.encode("utf-8")
-            await file.write(f"{role.id} {message_id.id} {emoji_utf}\n")
-            await ctx.respond("Reaction has been set.")
-
-    @Cog.listener()
-    async def on_raw_reaction_add(self, payload):
-        for role_id, message_id_id, emoji in self.bot.reaction_roles:
-            if message_id_id == payload.message_id and emoji == str(
-                payload.emoji.name.encode("utf-8")
-            ):
-                await payload.member.add_roles(
-                    self.bot.get_guild(payload.guild_id).get_role(role_id)
-                )
-                return
-
-    @Cog.listener()
-    async def on_raw_reaction_remove(self, payload):
-        for role_id, msg_id, emoji in self.bot.reaction_roles:
-            if msg_id == payload.message_id and emoji == str(
-                payload.emoji.name.encode("utf-8")
-            ):
-                guild = self.bot.get_guild(payload.guild_id)
-                await guild.get_member(payload.user_id).remove_roles(
-                    guild.get_role(role_id)
-                )
-                return
-
-
 def setup(bot: PurpBot):
     bot.add_cog(Utils(bot))
