@@ -28,8 +28,11 @@ class PurpBot(Bot):
         database_url: Optional[str] = None,
         test_mode: Optional[bool] = False,
     ):
-        intents = Intents.default()
+        intents = Intents.none()
+        intents.guilds = True
         intents.message_content = True
+        intents.guild_messages = True
+
 
         self.pool: Optional[Pool]
         self.db: Database
