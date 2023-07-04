@@ -6,6 +6,7 @@ from typing import Optional
 from datetime import timedelta
 from logging import getLogger
 from dataclasses import dataclass
+from fasttext import load_model
 
 logger = getLogger(__name__)
 
@@ -32,9 +33,9 @@ class AiPartialMessage:
 
 
 class AiModeration(Cog):
+    __slots__ = ("bot")
     def __init__(self, bot: PurpBot):
         self.bot = bot
-        # self.perspective = self.bot.perspective
 
     def build_view(self, message: AiPartialMessage, disabled: bool = False) -> View:
         delete_button: Button = Button(
@@ -124,16 +125,14 @@ class AiModeration(Cog):
         if not guild_settings or not guild_settings.ai_reports_channel:
             return
 
-        logger.debug(f"adding message {message.id} to scanning queue")
-
         await self.scan_message(message, guild_settings.ai_reports_channel)
-        self.bot.scanned_messages_count += 1
 
     async def scan_message(self, msg: Message, reports_channel: int):
         content = msg.content
         message_id = msg.id
         try:
-            _score = self.bot.ai_mod_model.predict(content, k=6)
+            model = load_model("model.bin")
+            _score = model.predict(content, k=6)
             logger.info(_score)
 
             score = {

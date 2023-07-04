@@ -5,7 +5,6 @@ from typing import Optional, List, Tuple
 from asyncpg import create_pool, Pool
 from src.db import Database
 from logging import info, error, getLogger, basicConfig, INFO
-from fasttext import load_model
 from asyncio import sleep
 
 basicConfig(format="[%(levelname)s] %(asctime)s: %(message)s", level=INFO)
