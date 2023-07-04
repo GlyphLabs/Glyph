@@ -33,7 +33,6 @@ class PurpBot(Bot):
         intents.message_content = True
         intents.guild_messages = True
 
-
         self.pool: Optional[Pool]
         self.db: Database
         self.statcord_key = statcord_key

@@ -4,16 +4,13 @@ from discord import (
     Embed,
     Option,
     ApplicationContext,
-    Role,
     Webhook,
     Member,
     NotFound,
-    Message,
     Emoji,
 )
 from src.views import VoteButtons
 from aiohttp import ClientSession
-from aiofiles import open as aopen
 
 
 class Utils(Cog):
@@ -265,6 +262,7 @@ class Utils(Cog):
         embed = Embed(color=0x6B74C7)
         embed.set_image(url=servericon)
         await ctx.respond(embed=embed)
+
 
 def setup(bot: PurpBot):
     bot.add_cog(Utils(bot))
