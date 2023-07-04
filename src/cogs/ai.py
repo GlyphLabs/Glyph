@@ -7,6 +7,8 @@ from datetime import timedelta
 from logging import getLogger
 from dataclasses import dataclass
 from fasttext import load_model
+from asyncio import get_running_loop
+
 
 logger = getLogger(__name__)
 
@@ -33,7 +35,8 @@ class AiPartialMessage:
 
 
 class AiModeration(Cog):
-    __slots__ = ("bot")
+    __slots__ = "bot"
+
     def __init__(self, bot: PurpBot):
         self.bot = bot
 
@@ -131,8 +134,13 @@ class AiModeration(Cog):
         content = msg.content
         message_id = msg.id
         try:
-            model = load_model("model.bin")
-            _score = model.predict(content, k=6)
+            loop = get_running_loop()
+            model = await loop.run_in_executor(
+                None, lambda: load_model("src/cogs/model.bin")
+            )
+            _score = await loop.run_in_executor(
+                None, lambda: model.predict(content, k=6)
+            )
             logger.info(_score)
 
             score = {
