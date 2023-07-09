@@ -46,7 +46,7 @@ class PurpBot(Bot):
         )
         info("initialized bot")
 
-        for cog in ("fun", "moderation", "utils", "ai", "config", "error"):
+        for cog in ("fun", "moderation", "utils", "ai", "config", "error", "levels"):
             try:
                 info(
                     f'loaded cog {self.load_extension(f"src.cogs.{cog}", store=False)[0]}'
@@ -94,6 +94,8 @@ class PurpBot(Bot):
             await self.conn.execute(
                 "CREATE TABLE IF NOT EXISTS guild_config (guild_id BIGINT PRIMARY KEY, ai_reports_channel BIGINT UNIQUE, logs_channel BIGINT UNIQUE, level_system BOOLEAN)"
             )
-            await self.conn.execute("CREATE TABLE IF NOT EXISTS levels (level INTEGER, xp INTEGER, user_id BIGINT, guild_id BIGINT)")
+            await self.conn.execute(
+                "CREATE TABLE IF NOT EXISTS levels (level INTEGER, xp INTEGER, user_id BIGINT, guild_id BIGINT)"
+            )
         info("initialized database")
         return

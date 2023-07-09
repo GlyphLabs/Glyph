@@ -7,10 +7,10 @@ from datetime import datetime
 
 
 class MsgPackMixin:
-    def serialize(self):
+    def serialize(self) -> bytes:
         return packb(self.as_dict())
 
-    def as_dict(self):
+    def as_dict(self) -> dict[str, str]:
         return {
             attr: getattr(self, attr)
             for attr in dir(self)
@@ -28,6 +28,7 @@ class Database:
     def __init__(self, conn: Connection):
         self.conn = conn
         self.__cache: TTLCache[int, bytes] = TTLCache(maxsize=100, ttl=600)
+        self.__level_cache: TTLCache[int, int] = TTLCache(maxsize=100, ttl=600)
 
     async def create_warn(self, user_id: int, guild: int, reason: str) -> Warn:
         async with self.conn.transaction():
@@ -83,6 +84,8 @@ class Database:
             self.__cache[guild_id] = settings.serialize()
 
     async def get_level_stats(self, user_id: int, guild_id: int) -> LevelStats:
+        if f"{guild_id}-{user_id}" in self.__level_cache:
+            return self.__level_cache[f"{guild_id}-{user_id}"]
         async with self.conn.transaction():
             data = await self.conn.fetchrow(
                 "SELECT * FROM level_stats WHERE user_id = $1 AND guild_id = $2",
@@ -92,22 +95,36 @@ class Database:
             if data:
                 return LevelStats(**{k: v for k, v in data.items()})
             else:
-                await self.conn.execute("INSERT INTO levels (level, xp, user_id, guild_id) VALUES ($1, $2, $3, $4)", user_id, guild_id, 0, 0)
-                return LevelStats(user_id, guild_id, 0, 0)
-            
-    async def set_level_stats(self, user_id: int, guild_id: int, stats: LevelStats) -> None:
-        async with self.conn.transaction():
-            await self.conn.execute(
-                """INSERT INTO level_stats
-                    (user_id, guild_id, level, xp)
-                    VALUES ($1, $2, $3, $4)
-                    ON CONFLICT (user_id, guild_id) DO UPDATE
-                    SET level = $3, xp = $4""",
-                user_id,
-                guild_id,
-                stats.level,
-                stats.xp,
-            )
+                await self.conn.execute(
+                    "INSERT INTO levels (level, xp, user_id, guild_id) VALUES ($1, $2, $3, $4)",
+                    user_id,
+                    guild_id,
+                    0,
+                    0,
+                )
+                stats = LevelStats(user_id, guild_id, 0, 0)
+                self.__level_cache[f"{guild_id}-{user_id}"] = stats
+                return stats
+
+    async def add_xp(self, guild_id: int, user_id: int, xp: int) -> None:
+        settings = await self.get_guild_settings(guild_id)
+        if not settings.level_system:
+            return
+        stats = await self.get_level_stats(user_id, guild_id)
+        stats.xp += xp
+        if stats.xp >= stats.level * 100:
+            stats.level += 1
+            stats.xp = 0
+
+        self.conn.execute(
+            "UPDATE level_stats SET level = $1, xp = $2 WHERE user_id = $3 AND guild_id = $4",
+            stats.level,
+            stats.xp,
+            user_id,
+            guild_id,
+        )
+
+        self.__level_cache[f"{guild_id}-{user_id}"] = stats.serialize()
 
 
 class GuildSettings(MsgPackMixin):  # type: ignore
@@ -140,6 +157,7 @@ class Warn(MsgPackMixin):  # type: ignore
 
     def __repr__(self):
         return f"<Warn(user_id={self.user_id}, reason={self.reason}, time={self.time}, guild={self.guild})>"
+
 
 class LevelStats(MsgPackMixin):
     __slots__ = ("user_id", "guild_id", "xp", "level")
