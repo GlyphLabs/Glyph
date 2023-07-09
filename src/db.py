@@ -89,7 +89,7 @@ class Database:
             return self.__level_cache[f"{guild_id}-{user_id}"]
         async with self.conn.transaction():
             data = await self.conn.fetchrow(
-                "SELECT * FROM level_stats WHERE user_id = $1 AND guild_id = $2",
+                "SELECT * FROM levels WHERE user_id = $1 AND guild_id = $2",
                 user_id,
                 guild_id,
             )
@@ -118,7 +118,7 @@ class Database:
             stats.xp = 0
 
         self.conn.execute(
-            "UPDATE level_stats SET level = $1, xp = $2 WHERE user_id = $3 AND guild_id = $4",
+            "UPDATE levels SET level = $1, xp = $2 WHERE user_id = $3 AND guild_id = $4",
             stats.level,
             stats.xp,
             user_id,
