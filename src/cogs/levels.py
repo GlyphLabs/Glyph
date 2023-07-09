@@ -7,19 +7,18 @@ from random import randint
 class Levels(Cog):
     def __init__(self, bot: PurpBot):
         self.bot = bot
-        self.db = bot.db
 
     @Cog.listener()
     async def on_message(self, message: Message):
         if message.author.bot or not message.guild:
             return
 
-        guild_settings = self.db.get_guild_settings(message.guild.id)
+        guild_settings = self.bot.db.get_guild_settings(message.guild.id)
 
         if not guild_settings.level_system:
             return
 
-        level_stats = self.db.get_level_stats(message.author.id, message.guild.id)
+        level_stats = self.bot.db.get_level_stats(message.author.id, message.guild.id)
         new_xp = randint(5, 10)
 
         if level_stats.xp + new_xp >= level_stats.level * 100:
@@ -29,11 +28,11 @@ class Levels(Cog):
                 ).set_author(name="New Level", icon_url=message.author.avatar_url)
             )
 
-        self.db.add_xp(message.author.id, message.guild.id, new_xp)
+        self.bot.db.add_xp(message.author.id, message.guild.id, new_xp)
 
     @slash_command(name="rank", description="Shows your rank")
     async def rank(self, ctx: Context):
-        stats = self.db.get_level_stats(ctx.author.id, ctx.guild.id)
+        stats = self.bot.db.get_level_stats(ctx.author.id, ctx.guild.id)
         await ctx.respond(
             embed=Embed()
             .set_author(
