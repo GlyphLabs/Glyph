@@ -17,6 +17,32 @@ class Config(Cog):
     ai_config = config.create_subgroup(
         "ai", "Configure the AI moderation for your server."
     )
+    
+    @config.command(
+            name="levels",
+            description="Enable or disable the level system for your server.",
+    )
+    async def levels(
+        self,
+        ctx: ApplicationContext,
+        enabled: Option(
+            bool,
+            description="Whether or not to enable the level system.",
+            required=True,
+        )
+    ):
+        settings = await self.bot.db.get_guild_settings(ctx.guild.id)
+        if not settings:
+            settings = GuildSettings(guild_id=ctx.guild.id, level_system=enabled)
+        else:
+            settings.level_system = enabled
+        await self.bot.db.set_guild_settings(ctx.guild.id, settings)
+        await ctx.respond(
+            embed=Embed(
+                description=f"Level system has been {'enabled' if enabled else 'disabled'} for this server.",
+                color=0x6B74C7,
+            ).set_author(name=f"Level System {'Enabled' if enabled else 'Disabled'}")
+        )
 
     @ai_config.command(
         name="setchannel",
