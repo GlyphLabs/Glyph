@@ -80,6 +80,7 @@ class Database:
                 guild_id,
                 settings.ai_reports_channel,
                 settings.logs_channel,
+                settings.level_system,
             )
             self.__cache[guild_id] = settings.serialize()
 
