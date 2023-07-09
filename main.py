@@ -8,7 +8,6 @@ from os import environ
 load_dotenv()
 
 bot = PurpBot(
-    statcord_key=environ.get("STATCORD_KEY"),
     database_url=environ.get("DATABASE_URL"),
     test_mode=bool(int(environ.get("TEST_MODE", 0))),
 )

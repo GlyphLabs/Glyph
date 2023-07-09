@@ -1,6 +1,5 @@
 from discord import Intents, Game, MemberCacheFlags, TextChannel
 from discord.ext.commands import when_mentioned, Bot
-from statcord import StatcordClient
 from typing import Optional, List, Tuple
 from asyncpg import create_pool, Pool
 from src.db import Database
@@ -13,8 +12,6 @@ getLogger("discord.py")
 
 class PurpBot(Bot):
     __slots__ = (
-        "statcord_key",
-        "statcord",
         "reaction_roles",
         "pool",
         "database_url",
@@ -24,7 +21,6 @@ class PurpBot(Bot):
 
     def __init__(
         self,
-        statcord_key: Optional[str],
         database_url: Optional[str] = None,
         test_mode: Optional[bool] = False,
     ):
@@ -35,7 +31,6 @@ class PurpBot(Bot):
 
         self.pool: Optional[Pool]
         self.db: Database
-        self.statcord_key = statcord_key
         self.reaction_roles: List[Tuple[int, int, int]] = []
         self.database_url = database_url
         self.scanned_messages_count: int = 0
@@ -58,10 +53,6 @@ class PurpBot(Bot):
                 )
             except Exception as e:
                 error(f"failed to load cog {cog}: {e}")
-
-        self.statcord = StatcordClient(
-            self, self.statcord_key, custom_1=lambda: self.scanned_messages_count
-        )
 
     async def on_ready(self):
         info("PurpBot is online!")
