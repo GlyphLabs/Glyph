@@ -23,7 +23,7 @@ class MsgPackMixin:
 
 
 class Database:
-    __slots__ = ("conn", "__cache")
+    __slots__ = ("conn", "__cache", "__level_cache")
 
     def __init__(self, conn: Connection):
         self.conn = conn
