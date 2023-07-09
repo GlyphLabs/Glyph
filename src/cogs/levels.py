@@ -13,12 +13,12 @@ class Levels(Cog):
         if message.author.bot or not message.guild:
             return
 
-        guild_settings = self.bot.db.get_guild_settings(message.guild.id)
+        guild_settings = await self.bot.db.get_guild_settings(message.guild.id)
 
         if not guild_settings.level_system:
             return
 
-        level_stats = self.bot.db.get_level_stats(message.author.id, message.guild.id)
+        level_stats = await self.bot.db.get_level_stats(message.author.id, message.guild.id)
         new_xp = randint(5, 10)
 
         if level_stats.xp + new_xp >= level_stats.level * 100:
@@ -28,7 +28,7 @@ class Levels(Cog):
                 ).set_author(name="New Level", icon_url=message.author.avatar_url)
             )
 
-        self.bot.db.add_xp(message.author.id, message.guild.id, new_xp)
+        await self.bot.db.add_xp(message.author.id, message.guild.id, new_xp)
 
     @slash_command(name="rank", description="Shows your rank")
     async def rank(self, ctx: Context):
