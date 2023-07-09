@@ -98,7 +98,7 @@ class Database:
                 0,
                 0,
             )
-            stats = LevelStats(user_id, guild_id, 0, 0)
+            stats = LevelStats(0, 0, user_id, guild_id)
             self.__level_cache[f"{guild_id}-{user_id}"] = stats
             return stats
 
