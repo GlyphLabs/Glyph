@@ -31,7 +31,6 @@ class Database:
         self.__level_cache: TTLCache[int, int] = TTLCache(maxsize=100, ttl=600)
 
     async def create_warn(self, user_id: int, guild: int, reason: str) -> Warn:
-        async with self.conn.transaction():
             await self.conn.execute(
                 """INSERT INTO warns (user_id, reason, time, guild)
                     VALUES ($1, $2, $3, $4)""",
@@ -43,7 +42,6 @@ class Database:
             return Warn(user_id, reason, timestamp, guild)
 
     async def get_warns(self, user_id: int, guild: int) -> list[Warn]:
-        async with self.conn.transaction():
             data = await self.conn.fetch(
                 "SELECT * FROM warns WHERE user_id = $1 AND guild = $2",
                 user_id,
@@ -56,21 +54,19 @@ class Database:
     async def get_guild_settings(self, guild_id: int) -> GuildSettings:
         if guild_id in self.__cache:
             return GuildSettings.from_data(self.__cache[guild_id])
-        async with self.conn.transaction():
-            data = await self.conn.fetchrow(
-                "SELECT * FROM guild_config WHERE guild_id = $1", guild_id
+        data = await self.conn.fetchrow(
+            "SELECT * FROM guild_config WHERE guild_id = $1", guild_id
+        )
+        if data:
+            self.__cache[guild_id] = packb({k: v for k, v in data.items()})
+            return GuildSettings(**{k: v for k, v in data.items()})
+        else:
+            await self.conn.execute(
+                "INSERT INTO guild_config (guild_id) VALUES ($1)", guild_id
             )
-            if data:
-                self.__cache[guild_id] = packb({k: v for k, v in data.items()})
-                return GuildSettings(**{k: v for k, v in data.items()})
-            else:
-                await self.conn.execute(
-                    "INSERT INTO guild_config (guild_id) VALUES ($1)", guild_id
-                )
-                return GuildSettings(guild_id)
+            return GuildSettings(guild_id)
 
     async def set_guild_settings(self, guild_id: int, settings: GuildSettings) -> None:
-        async with self.conn.transaction():
             await self.conn.execute(
                 """INSERT INTO guild_config
                     (guild_id, ai_reports_channel, logs_channel, level_system)
@@ -87,25 +83,24 @@ class Database:
     async def get_level_stats(self, user_id: int, guild_id: int) -> LevelStats:
         if f"{guild_id}-{user_id}" in self.__level_cache:
             return self.__level_cache[f"{guild_id}-{user_id}"]
-        async with self.conn.transaction():
-            data = await self.conn.fetchrow(
-                "SELECT * FROM levels WHERE user_id = $1 AND guild_id = $2",
+        data = await self.conn.fetchrow(
+            "SELECT * FROM levels WHERE user_id = $1 AND guild_id = $2",
+            user_id,
+            guild_id,
+        )
+        if data:
+            return LevelStats(**{k: v for k, v in data.items()})
+        else:
+            await self.conn.execute(
+                "INSERT INTO levels (level, xp, user_id, guild_id) VALUES ($1, $2, $3, $4)",
                 user_id,
                 guild_id,
+                0,
+                0,
             )
-            if data:
-                return LevelStats(**{k: v for k, v in data.items()})
-            else:
-                await self.conn.execute(
-                    "INSERT INTO levels (level, xp, user_id, guild_id) VALUES ($1, $2, $3, $4)",
-                    user_id,
-                    guild_id,
-                    0,
-                    0,
-                )
-                stats = LevelStats(user_id, guild_id, 0, 0)
-                self.__level_cache[f"{guild_id}-{user_id}"] = stats
-                return stats
+            stats = LevelStats(user_id, guild_id, 0, 0)
+            self.__level_cache[f"{guild_id}-{user_id}"] = stats
+            return stats
 
     async def add_xp(self, guild_id: int, user_id: int, xp: int) -> None:
         settings = await self.get_guild_settings(guild_id)

@@ -174,21 +174,19 @@ class Moderation(Cog):
             required=True,
         ),
     ):
-        async with self.bot.db.pool.acquire() as conn:
-            async with conn.transaction():
-                await conn.execute(
-                    "DELETE FROM warns WHERE user = ? AND guild = ?",
-                    (member.id, ctx.guild.id),
-                )
-                embed = Embed(
-                    colour=Colour.green(),
-                    description=f"Removed all of {member.mention}'s warn(s)",
-                )
-                embed.set_author(
-                    name="Success",
-                    icon_url="https://cdn.discordapp.com/emojis/1055805763651641355.webp?size=96&quality=lossless",
-                )
-                await ctx.respond(embed=embed)
+        await self.bot.conn.execute(
+            "DELETE FROM warns WHERE user = ? AND guild = ?",
+            (member.id, ctx.guild.id),
+        )
+        embed = Embed(
+            colour=Colour.green(),
+            description=f"Removed all of {member.mention}'s warn(s)",
+        )
+        embed.set_author(
+            name="Success",
+            icon_url="https://cdn.discordapp.com/emojis/1055805763651641355.webp?size=96&quality=lossless",
+        )
+        await ctx.respond(embed=embed)
 
     @slash_command(
         name="warns", description="Shows someone's warnings | /warrns [member]"
