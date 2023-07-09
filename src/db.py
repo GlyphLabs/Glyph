@@ -93,10 +93,10 @@ class Database:
         else:
             await self.conn.execute(
                 "INSERT INTO levels (level, xp, user_id, guild_id) VALUES ($1, $2, $3, $4)",
+                0,
+                0,
                 user_id,
                 guild_id,
-                0,
-                0,
             )
             stats = LevelStats(0, 0, user_id, guild_id)
             self.__level_cache[f"{guild_id}-{user_id}"] = stats
