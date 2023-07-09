@@ -1,7 +1,7 @@
 from discord import Intents, Game, MemberCacheFlags, TextChannel
 from discord.ext.commands import when_mentioned, Bot
 from typing import Optional, List, Tuple
-from asyncpg import create_pool, Pool
+from asyncpg import connect, Connection
 from src.db import Database
 from logging import info, error, getLogger, basicConfig, INFO
 from asyncio import sleep
@@ -13,7 +13,7 @@ getLogger("discord.py")
 class PurpBot(Bot):
     __slots__ = (
         "reaction_roles",
-        "pool",
+        "conn",
         "database_url",
         "db",
         "scanned_messages_count",
@@ -29,7 +29,7 @@ class PurpBot(Bot):
         intents.message_content = True
         intents.guild_messages = True
 
-        self.pool: Optional[Pool]
+        self.conn: Optional[Connection]
         self.db: Database
         self.reaction_roles: List[Tuple[int, int, int]] = []
         self.database_url = database_url
@@ -72,7 +72,7 @@ class PurpBot(Bot):
             retry = 1
             while True:
                 try:
-                    self.pool: Pool = await create_pool(self.database_url)
+                    self.conn: Connection = await connect(self.database_url)
                     break
                 except Exception as e:
                     if retry >= 3:
@@ -85,15 +85,15 @@ class PurpBot(Bot):
                     retry += 1
                     info("failed to connect to database, retrying in 3 seconds")
                     await sleep(3)
-            self.db = Database(self.pool)
+            self.db = Database(self.conn)
 
-        async with self.pool.acquire() as conn:
-            async with conn.transaction():
-                await conn.execute(
-                    "CREATE TABLE IF NOT EXISTS warns(user_id BIGINT, reason TEXT, time BIGINT, guild BIGINT)"
-                )
-                await conn.execute(
-                    "CREATE TABLE IF NOT EXISTS guild_config (guild_id BIGINT PRIMARY KEY, ai_reports_channel BIGINT UNIQUE, logs_channel BIGINT UNIQUE)"
-                )
+        async with self.conn.transaction():
+            await self.conn.execute(
+                "CREATE TABLE IF NOT EXISTS warns(user_id BIGINT, reason TEXT, time BIGINT, guild BIGINT)"
+            )
+            await self.conn.execute(
+                "CREATE TABLE IF NOT EXISTS guild_config (guild_id BIGINT PRIMARY KEY, ai_reports_channel BIGINT UNIQUE, logs_channel BIGINT UNIQUE, level_system BOOLEAN)"
+            )
+            await self.conn.execute("CREATE TABLE IF NOT EXISTS levels (level INTEGER, xp INTEGER, user_id BIGINT, guild_id BIGINT)")
         info("initialized database")
         return
