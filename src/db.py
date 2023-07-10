@@ -2,7 +2,7 @@ from __future__ import annotations
 from cachetools import TTLCache
 from msgpack import packb, unpackb
 from typing import Optional
-from asyncpg import Connection
+from asyncpg import Pool
 from datetime import datetime
 
 
@@ -23,15 +23,16 @@ class MsgPackMixin:
 
 
 class Database:
-    __slots__ = ("conn", "__cache", "__level_cache")
+    __slots__ = ("pool", "__cache", "__level_cache")
 
-    def __init__(self, conn: Connection):
-        self.conn = conn
+    def __init__(self, pool: Pool):
+        self.pool = pool
         self.__cache: TTLCache[int, bytes] = TTLCache(maxsize=100, ttl=600)
         self.__level_cache: TTLCache[int, int] = TTLCache(maxsize=100, ttl=600)
 
     async def create_warn(self, user_id: int, guild: int, reason: str) -> Warn:
-            await self.conn.execute(
+        async with self.pool.acquire() as conn:
+            await conn.execute(
                 """INSERT INTO warns (user_id, reason, time, guild)
                     VALUES ($1, $2, $3, $4)""",
                 user_id,
@@ -42,7 +43,8 @@ class Database:
             return Warn(user_id, reason, timestamp, guild)
 
     async def get_warns(self, user_id: int, guild: int) -> list[Warn]:
-            data = await self.conn.fetch(
+        async with self.pool.acquire() as conn:
+            data = await conn.fetch(
                 "SELECT * FROM warns WHERE user_id = $1 AND guild = $2",
                 user_id,
                 guild,
@@ -54,20 +56,22 @@ class Database:
     async def get_guild_settings(self, guild_id: int) -> GuildSettings:
         if guild_id in self.__cache:
             return GuildSettings.from_data(self.__cache[guild_id])
-        data = await self.conn.fetchrow(
-            "SELECT * FROM guild_config WHERE guild_id = $1", guild_id
-        )
-        if data:
-            self.__cache[guild_id] = packb({k: v for k, v in data.items()})
-            return GuildSettings(**{k: v for k, v in data.items()})
-        else:
-            await self.conn.execute(
-                "INSERT INTO guild_config (guild_id) VALUES ($1)", guild_id
+        async with self.pool.acquire() as conn:
+            data = await conn.fetchrow(
+                "SELECT * FROM guild_config WHERE guild_id = $1", guild_id
             )
-            return GuildSettings(guild_id)
+            if data:
+                self.__cache[guild_id] = packb({k: v for k, v in data.items()})
+                return GuildSettings(**{k: v for k, v in data.items()})
+            else:
+                await conn.execute(
+                    "INSERT INTO guild_config (guild_id) VALUES ($1)", guild_id
+                )
+                return GuildSettings(guild_id)
 
     async def set_guild_settings(self, guild_id: int, settings: GuildSettings) -> None:
-            await self.conn.execute(
+        async with self.pool.acquire() as conn:
+            await conn.execute(
                 """INSERT INTO guild_config
                     (guild_id, ai_reports_channel, logs_channel, level_system)
                     VALUES ($1, $2, $3, $4)
@@ -112,13 +116,15 @@ class Database:
             stats.level += 1
             stats.xp = 0
 
-        self.conn.execute(
-            "UPDATE levels SET level = $1, xp = $2 WHERE user_id = $3 AND guild_id = $4",
-            stats.level,
-            stats.xp,
-            user_id,
-            guild_id,
-        )
+
+        async with self.pool.acquire() as conn:    
+            await conn.execute(
+                "UPDATE levels SET level = $1, xp = $2 WHERE user_id = $3 AND guild_id = $4",
+                stats.level,
+                stats.xp,
+                user_id,
+                guild_id,
+            )
 
         self.__level_cache[f"{guild_id}-{user_id}"] = stats.serialize()
 
