@@ -32,7 +32,7 @@ class Levels(Cog):
 
     @slash_command(name="rank", description="Shows your rank")
     async def rank(self, ctx: Context):
-        stats = self.bot.db.get_level_stats(ctx.author.id, ctx.guild.id)
+        stats = await self.bot.db.get_level_stats(ctx.author.id, ctx.guild.id)
         await ctx.respond(
             embed=Embed()
             .set_author(
