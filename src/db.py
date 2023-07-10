@@ -87,24 +87,25 @@ class Database:
     async def get_level_stats(self, user_id: int, guild_id: int) -> LevelStats:
         if f"{guild_id}-{user_id}" in self.__level_cache:
             return self.__level_cache[f"{guild_id}-{user_id}"]
-        data = await self.conn.fetchrow(
-            "SELECT * FROM levels WHERE user_id = $1 AND guild_id = $2",
-            user_id,
-            guild_id,
-        )
-        if data:
-            return LevelStats(**{k: v for k, v in data.items()})
-        else:
-            await self.conn.execute(
-                "INSERT INTO levels (level, xp, user_id, guild_id) VALUES ($1, $2, $3, $4)",
-                0,
-                0,
+        with self.pool.acquire() as conn:
+            data = await conn.fetchrow(
+                "SELECT * FROM levels WHERE user_id = $1 AND guild_id = $2",
                 user_id,
                 guild_id,
             )
-            stats = LevelStats(0, 0, user_id, guild_id)
-            self.__level_cache[f"{guild_id}-{user_id}"] = stats
-            return stats
+            if data:
+                return LevelStats(**{k: v for k, v in data.items()})
+            else:
+                await conn.execute(
+                    "INSERT INTO levels (level, xp, user_id, guild_id) VALUES ($1, $2, $3, $4)",
+                    0,
+                    0,
+                    user_id,
+                    guild_id,
+                )
+                stats = LevelStats(0, 0, user_id, guild_id)
+                self.__level_cache[f"{guild_id}-{user_id}"] = stats
+                return stats
 
     async def add_xp(self, guild_id: int, user_id: int, xp: int) -> None:
         settings = await self.get_guild_settings(guild_id)
