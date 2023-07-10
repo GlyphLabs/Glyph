@@ -87,7 +87,7 @@ class Database:
     async def get_level_stats(self, user_id: int, guild_id: int) -> LevelStats:
         if f"{guild_id}-{user_id}" in self.__level_cache:
             return self.__level_cache[f"{guild_id}-{user_id}"]
-        with self.pool.acquire() as conn:
+        async with self.pool.acquire() as conn:
             data = await conn.fetchrow(
                 "SELECT * FROM levels WHERE user_id = $1 AND guild_id = $2",
                 user_id,
