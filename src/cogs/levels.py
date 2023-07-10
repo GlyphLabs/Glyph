@@ -25,7 +25,7 @@ class Levels(Cog):
             await message.reply(
                 embed=Embed(
                     description=f"Congratulations, {message.author.mention}! You leveled up to level {level_stats.level+1}!"
-                ).set_author(name="New Level", icon_url=message.author.avatar_url)
+                ).set_author(name="New Level", icon_url=message.author.avatar.url)
             )
 
         await self.bot.db.add_xp(message.author.id, message.guild.id, new_xp)
@@ -36,7 +36,7 @@ class Levels(Cog):
         await ctx.respond(
             embed=Embed()
             .set_author(
-                name=f"{ctx.author.name}'s Rank", icon_url=ctx.author.avatar_url
+                name=f"{ctx.author.name}'s Rank", icon_url=ctx.author.avatar.url
             )
             .add_field(name="Level", value=stats.level)
             .add_field(name="XP", value=f"{stats.xp}/{stats.level*100}")
