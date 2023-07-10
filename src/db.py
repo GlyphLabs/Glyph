@@ -113,6 +113,8 @@ class Database:
             return
         stats = await self.get_level_stats(user_id, guild_id)
         stats.xp += xp
+        print(stats.xp)
+        print(stats.level * 100)
         if stats.xp >= stats.level * 100:
             stats.level += 1
             stats.xp = 0
