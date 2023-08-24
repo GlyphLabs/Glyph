@@ -96,6 +96,7 @@ class GuildSettings(MsgPackMixin):  # type: ignore
         guild_id: int,
         ai_reports_channel: Optional[int] = None,
         logs_channel: Optional[int] = None,
+        **kwargs # just collapse extra data instead of screaming and crying
     ):
         self.guild_id: int = guild_id
         self.ai_reports_channel: Optional[int] = ai_reports_channel
