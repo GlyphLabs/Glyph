@@ -1,5 +1,5 @@
 from __future__ import annotations
-from cachetools import TTLCache
+from cachetools import LFUCache
 from msgpack import packb, unpackb
 from typing import Optional
 from asyncpg import Pool
@@ -27,7 +27,7 @@ class Database:
 
     def __init__(self, pool: Pool):
         self.pool = pool
-        self.__cache: TTLCache[int, bytes] = TTLCache(maxsize=100, ttl=600)
+        self.__cache: LFUCache[int, bytes] = LFUCache(maxsize=100)
 
     async def create_warn(self, user_id: int, guild: int, reason: str) -> Warn:
         async with self.pool.acquire() as conn:
