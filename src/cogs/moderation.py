@@ -9,7 +9,7 @@ from discord.ext.commands import (
 from discord import Embed, Option, ApplicationContext, Member, Colour, Role
 from discord.ext.commands.errors import MissingPermissions, CommandOnCooldown
 from datetime import timedelta
-
+from humanize import naturaldelta
 
 class Moderation(Cog):
     def __init__(self, bot: PurpBot):
@@ -215,13 +215,24 @@ class Moderation(Cog):
             await ctx.respond(embed=embed)
 
     @slash_command(name="timeout", description="Puts a member in timeout")
-    async def timeout(self, ctx, member: Option(Member), minutes: Option(int)):
+    async def timeout(self, ctx, member: Option(Member), time: Option(str, description="A period of time, expressed as 1d, 5m, etc.")):
         """Apply a timeout to a member"""
+        time_units = {
+            "s": 1,         # seconds
+            "m": 60,        # minutes
+            "h": 3600,      # hours
+            "d": 86400,     # days
+        }
 
-        duration = timedelta(minutes=minutes)
+        try:
+            seconds = int(time[:-1]) * time_units[(time[-1])]
+        except Exception:
+            await ctx.respond(f"Invalid time `{time}`")
+
+        duration = timedelta(seconds=seconds)
         # timeout for the amount of time given, then remove timeout
         await member.timeout_for(duration)
-        await ctx.reply(f"Member timed out for {minutes} minutes.")
+        await ctx.respond(f"Member timed out for {naturaldelta(duration)}.")
 
     @slash_command(name="purge", description="Delete a certain amount of messages")
     @has_permissions(manage_messages=True)

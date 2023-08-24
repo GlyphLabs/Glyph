@@ -258,7 +258,7 @@ class Utils(Cog):
 
     @slash_command(name="servericon", description="Sends the server icon")
     async def servericon(self, ctx: ApplicationContext):
-        servericon = ctx.guild.icon_url
+        servericon = ctx.guild.icon.url
         embed = Embed(color=0x6B74C7)
         embed.set_image(url=servericon)
         await ctx.respond(embed=embed)
