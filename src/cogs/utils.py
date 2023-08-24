@@ -182,54 +182,6 @@ class Utils(Cog):
             "https://tenor.com/view/rick-ashtley-never-gonna-give-up-rick-roll-gif-4819894"
         )
 
-    @slash_command(name="emoji-info", description="Get info about an emoji")
-    async def emojiinfo(
-        self,
-        ctx: ApplicationContext,
-        emoji: Option(Emoji, description="The emoji", required=True),
-    ):
-        if not emoji:
-            await ctx.respond(
-                "Enter an emoji. Warning: this command works with custom emojis, not built-in ones"
-            )
-            try:
-                emoji = await emoji.guild.fetch_emoji(emoji.id)
-            except NotFound:
-                return await ctx.respond(
-                    "I couldn't find that emoji, it maybe is in another server"
-                )
-
-            is_managed = "Yes" if emoji.managed else "No"
-            is_animated = "Yes" if emoji.animated else "No"
-            requires_colons = "Yes" if emoji.require_colons else "No"
-            creation_time = emoji.created_at.strftime("%I:%M %p %B %d, %Y")
-            can_use_emoji = (
-                "Everyone"
-                if not emoji.roles
-                else " ".join(role.name for role in emoji.roles)
-            )
-            description = f"""
-            > **Basic Info**
-            **Name:** {emoji.name}
-            **ID:** {emoji.id}
-            **URL:** [Emoji Link]({emoji.url})
-            **Author:** {emoji.user.mention} | {emoji.user.name}#{emoji.user.discriminator}
-            **Created:** {creation_time}
-            **Usable By:** {can_use_emoji}
-                
-            **Other Info**
-            **Animated:** {is_animated}
-            **Managed:** {is_managed}
-            **Requires Colons:** {requires_colons}
-            **Guild Name:** {emoji.guild.name}
-            **Guild ID:** {emoji.guild.id}
-            """
-            embed = Embed(
-                title=f"Info For {emoji.name}", description=description, colour=0x2ECC71
-            )
-            embed.set_thumbnail(url=emoji.url)
-            await ctx.respond(embed=embed)
-
     @slash_command(name="msgwebhook", description="Sends a message with a webhook.")
     async def msgwebhook(
         self,
