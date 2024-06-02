@@ -1,12 +1,14 @@
+from __future__ import annotations
 from src.bot import PurpBot
 from discord.ext.commands import Cog
+from discord.channel import TextChannel
 from discord import Message, Embed, ButtonStyle, Interaction
 from discord.ui import View, Button
 from typing import Optional
 from datetime import timedelta
 from logging import getLogger
 from dataclasses import dataclass
-from fasttext import load_model
+from fasttext import load_model # type: ignore
 from asyncio import get_running_loop
 
 
@@ -23,7 +25,24 @@ class AiPartialMessage:
     reports_channel: Optional[int] = None
 
     @classmethod
-    def from_message(cls, message: Message, reports_channel: Optional[int] = None):
+    def from_message(
+        cls, message: Message, reports_channel: Optional[int] = None
+    ) -> AiPartialMessage:
+        """builds an AiPartialMessage from a discord.Message object and optional reports_channel id.
+
+        Args:
+            message (Message): the message to build the partial message from.
+            reports_channel (int, optional): the id of the reports channel of that guild. Defaults to None.
+
+        Raises:
+            ValueError: raised if the message is not in a guild.
+
+        Returns:
+            AiPartialMessage: the constructed partial message.
+        """
+        if not message.guild:
+            raise ValueError("message must be in a guild.")
+
         return cls(
             guild_id=message.guild.id,
             channel_id=message.channel.id,
@@ -35,12 +54,21 @@ class AiPartialMessage:
 
 
 class AiModeration(Cog):
-    __slots__ = "bot"
+    __slots__ = ["bot"]
 
     def __init__(self, bot: PurpBot):
         self.bot = bot
 
     def build_view(self, message: AiPartialMessage, disabled: bool = False) -> View:
+        """builds an interactions view for the flagged message. the id's carry all required information to act on the message.
+
+        Args:
+            message (AiPartialMessage): a minimal version of the message to build the view for.
+            disabled (bool, optional): whether or not the view is disabled. Defaults to False.
+
+        Returns:
+            View: the built view
+        """
         delete_button: Button = Button(
             style=ButtonStyle.gray,
             label="Delete",
@@ -76,16 +104,26 @@ class AiModeration(Cog):
 
     @Cog.listener()
     async def on_interaction(self, interaction: Interaction):
+        # handles what happens when a view is interacted with
+
+        # check if the interaction is relevant. if not, end early.
         if (
             not interaction.custom_id
             or not interaction.message
             or not interaction.custom_id.startswith("flagged_message_options")
         ):
             return
+
+        # get the data we stored in the custom_id
         cleaned_id = interaction.custom_id.split(":")[1]
         action, msg_channel_id, msg_id = cleaned_id.split("-")
         channel = await self.bot.getch_channel(int(msg_channel_id))
-        message = await channel.fetch_message(int(msg_id))
+        message = await channel.fetch_message(int(msg_id)) # type: ignore
+        
+        # appease linter
+        if not message.guild:
+            return
+        
         if action == "delete":
             await message.delete()
             await interaction.response.send_message("Message deleted.", ephemeral=True)
@@ -99,7 +137,7 @@ class AiModeration(Cog):
         elif action == "kick":
             await message.delete()
             await message.guild.kick(
-                message.author.id,
+                message.author.id, # type: ignore
                 f"Flagged message by AI moderation. Kicked by {interaction.user}.",
             )
             await interaction.response.send_message(
@@ -107,7 +145,7 @@ class AiModeration(Cog):
             )
         elif action == "ban":
             await message.delete()
-            await message.guild.ban(message.author.id)
+            await message.guild.ban(message.author.id) # type: ignore
             await interaction.response.send_message(
                 f"{message.author} has been banned.", ephemeral=True
             )
@@ -130,7 +168,10 @@ class AiModeration(Cog):
 
         await self.scan_message(message, guild_settings.ai_reports_channel)
 
-    async def scan_message(self, msg: Message, reports_channel: int):
+    async def scan_message(self, msg: Message, reports_channel_id: int):
+        if not msg.guild:
+            return
+        
         content = msg.content
         message_id = msg.id
         try:
@@ -151,7 +192,7 @@ class AiModeration(Cog):
             if score.get("non_toxic", 0) < 0.5:
                 guild = await self.bot.fetch_guild(msg.guild.id)
                 author = await guild.fetch_member(msg.author.id)
-                reports_channel = await self.bot.getch_channel(reports_channel)
+                reports_channel: TextChannel = await self.bot.getch_channel(reports_channel_id) # type: ignore
                 embed = (
                     Embed(
                         title="Message Flagged",
