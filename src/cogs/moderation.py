@@ -11,6 +11,7 @@ from discord.ext.commands.errors import MissingPermissions, CommandOnCooldown
 from datetime import timedelta
 from humanize import naturaldelta
 
+
 class Moderation(Cog):
     def __init__(self, bot: PurpBot):
         self.bot = bot
@@ -215,13 +216,18 @@ class Moderation(Cog):
             await ctx.respond(embed=embed)
 
     @slash_command(name="timeout", description="Puts a member in timeout")
-    async def timeout(self, ctx, member: Option(Member), time: Option(str, description="A period of time, expressed as 1d, 5m, etc.")):
+    async def timeout(
+        self,
+        ctx,
+        member: Option(Member),
+        time: Option(str, description="A period of time, expressed as 1d, 5m, etc."),
+    ):
         """Apply a timeout to a member"""
         time_units = {
-            "s": 1,         # seconds
-            "m": 60,        # minutes
-            "h": 3600,      # hours
-            "d": 86400,     # days
+            "s": 1,  # seconds
+            "m": 60,  # minutes
+            "h": 3600,  # hours
+            "d": 86400,  # days
         }
 
         try:

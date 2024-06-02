@@ -6,8 +6,6 @@ from discord import (
     ApplicationContext,
     Webhook,
     Member,
-    NotFound,
-    Emoji,
 )
 from src.views import VoteButtons
 from aiohttp import ClientSession
