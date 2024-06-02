@@ -1,8 +1,8 @@
 from __future__ import annotations
 from cachetools import LFUCache
-from msgpack import packb, unpackb
+from msgpack import packb, unpackb # type: ignore
 from typing import Optional
-from asyncpg import Pool
+from asyncpg import Pool # type: ignore
 from datetime import datetime
 
 
@@ -88,7 +88,7 @@ class Database:
                 self.__cache[guild_id] = settings.serialize()
 
 
-class GuildSettings(MsgPackMixin):  # type: ignore
+class GuildSettings(MsgPackMixin):
     __slots__ = ("guild_id", "ai_reports_channel", "logs_channel")
 
     def __init__(
@@ -96,7 +96,7 @@ class GuildSettings(MsgPackMixin):  # type: ignore
         guild_id: int,
         ai_reports_channel: Optional[int] = None,
         logs_channel: Optional[int] = None,
-        **kwargs # just collapse extra data instead of screaming and crying
+        **kwargs,  # just collapse extra data instead of screaming and crying
     ):
         self.guild_id: int = guild_id
         self.ai_reports_channel: Optional[int] = ai_reports_channel
@@ -106,7 +106,7 @@ class GuildSettings(MsgPackMixin):  # type: ignore
         return f"<GuildSettings(guild_id={self.guild_id})>"
 
 
-class Warn(MsgPackMixin):  # type: ignore
+class Warn(MsgPackMixin):
     __slots__ = ("user_id", "reason", "time", "guild")
 
     def __init__(self, user_id: int, reason: str, time: float, guild: int):
