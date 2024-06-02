@@ -36,7 +36,6 @@ class PurpBot(Bot):
         intents.guild_messages = True
 
         # define some variables that will be used later
-        self.pool: Optional[Pool]
         self.db: Database
         self.reaction_roles: List[Tuple[int, int, int]] = []
         self.database_url = database_url
@@ -102,17 +101,6 @@ class PurpBot(Bot):
         Raises:
             e: the error preventing the bot from connecting to the database
         """
-        if not self.database_url:
-            async with self.pool.acquire() as conn:
-                async with conn.transaction():
-                    await conn.execute(
-                        "CREATE TABLE IF NOT EXISTS warns(user_id BIGINT, reason TEXT, time BIGINT, guild BIGINT)"
-                    )
-                    await conn.execute(
-                        "CREATE TABLE IF NOT EXISTS guild_config (guild_id BIGINT PRIMARY KEY, ai_reports_channel BIGINT UNIQUE, logs_channel BIGINT UNIQUE)"
-                    )
-            info("initialized database")
-            return
 
         retry = 1
         while True:
@@ -121,13 +109,23 @@ class PurpBot(Bot):
                 break
             except Exception as e:
                 if retry >= 3:
-                    error("failed to connect to database, exiting")
+                    error(f"database connection error: {e}. exiting")
                     await self.wait_until_ready()
                     await self.close()
                     raise e
                     # exit without raising error
 
                 retry += 1
-                info("failed to connect to database, retrying in 3 seconds")
+                error(f"database connection error: {e}. retrying in 3 seconds")
                 await sleep(3)
+
+        async with self.pool.acquire() as conn:
+            async with conn.transaction():
+                await conn.execute(
+                    "CREATE TABLE IF NOT EXISTS warns(user_id BIGINT, reason TEXT, time BIGINT, guild BIGINT)"
+                )
+                await conn.execute(
+                    "CREATE TABLE IF NOT EXISTS guild_config (guild_id BIGINT PRIMARY KEY, ai_reports_channel BIGINT UNIQUE, logs_channel BIGINT UNIQUE)"
+                )
+        info("initialized database")
         self.db = Database(self.pool)

@@ -39,8 +39,6 @@ import-expression==1.1.5
     # via jishaku
 jishaku==2.5.2
     # via purpbot
-libsql-experimental==0.0.34
-    # via purpbot
 msgpack==1.0.8
     # via purpbot
 multidict==6.0.5
