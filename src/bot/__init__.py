@@ -125,7 +125,10 @@ class PurpBot(Bot):
                     "CREATE TABLE IF NOT EXISTS warns(user_id BIGINT, reason TEXT, time BIGINT, guild BIGINT)"
                 )
                 await conn.execute(
-                    "CREATE TABLE IF NOT EXISTS guild_config (guild_id BIGINT PRIMARY KEY, ai_reports_channel BIGINT UNIQUE, logs_channel BIGINT UNIQUE)"
+                    "CREATE TABLE IF NOT EXISTS leveling(user_id BIGINT, xp BIGINT)"
+                )
+                await conn.execute(
+                    "CREATE TABLE IF NOT EXISTS guild_config (guild_id BIGINT PRIMARY KEY, ai_reports_channel BIGINT UNIQUE, logs_channel BIGINT UNIQUE, leveling_enabled BOOLEAN DEEFAULT FALSE)"
                 )
         info("initialized database")
         self.db = Database(self.pool)
