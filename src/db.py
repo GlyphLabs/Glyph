@@ -78,7 +78,7 @@ class Database:
                 await conn.execute(
                     """INSERT INTO guild_config
                     (guild_id, ai_reports_channel, logs_channel, leveling_enabled)
-                    VALUES ($1, $2, $3)
+                    VALUES ($1, $2, $3, $4)
                     ON CONFLICT (guild_id) DO UPDATE
                     SET ai_reports_channel = $2, logs_channel = $3, leveling_enabled = $4""",
                     guild_id,
