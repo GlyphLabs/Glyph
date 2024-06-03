@@ -35,7 +35,7 @@ class Config(Cog):
         settings = await self.bot.db.get_guild_settings(ctx.guild.id)
         if not settings:
             settings = GuildSettings(
-                guild_id=ctx.guild.i, ai_reports_channel=reports_channel.id
+                guild_id=ctx.guild.id, ai_reports_channel=reports_channel.id
             )
         else:
             settings.ai_reports_channel = reports_channel.id
