@@ -116,7 +116,7 @@ class Utils(Cog):
     async def info(self, ctx: ApplicationContext):
         embed = Embed(
             title="Information",
-            description="PurpBot is a Discord bot created in pycord. It's a moderation and utility bot to make your server better and easier to moderate. It has tons of features for you to use\n- Use this following command for all the commands and how to use them: `help`\n\n**Developers** - <@!985809728624005130> & <@!839514280251359292>\n**Support Server** - https://discord.gg/NqZuBvtrEJ",
+            description="Glyph is a Discord bot created in pycord. It's a moderation and utility bot to make your server better and easier to moderate. It has tons of features for you to use\n- Use this following command for all the commands and how to use them: `help`\n\n**Developers** - <@!536644802595520534> & <@!825803913462284328>\n**Support Server** - coming soon:tm:",
             color=0x6B74C7,
         )
         embed.add_field(name="Version:", value="v3.1.0")
@@ -153,7 +153,7 @@ class Utils(Cog):
     @slash_command(name="guildcount", description="shows bot's servers")
     async def guildcount(self, ctx: ApplicationContext):
         embed = Embed(
-            description=f"PurpBot is in {len(self.bot.guilds)} servers!", color=0x6B74C7
+            description=f"Glyph is in {len(self.bot.guilds)} servers!", color=0x6B74C7
         )
         await ctx.respond(embed=embed)
 
@@ -163,7 +163,7 @@ class Utils(Cog):
 
     @slash_command(name="help", description="Help Command")
     async def _help(self, ctx: ApplicationContext):
-        embed = Embed(title="PurpBot Help", color=0x6B74C7)
+        embed = Embed(title="Glyph Help", color=0x6B74C7)
         for name, cog in self.bot.cogs.items():
             if not cog.get_commands() or name.lower() == "jishaku":
                 continue
