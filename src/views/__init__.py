@@ -12,8 +12,8 @@ class VoteButtons(View):
         super().__init__()
         self.add_item(
             Button(
-                label="Vote for Purpbot",
-                url="https://top.gg/bot/849823707429994517/vote",
+                label="Vote for Glyph (coming soon)",
+                url="https://purplabs.github.io",
             )
         )
 
