@@ -26,6 +26,8 @@ cachetools==5.3.3
     # via purpbot
 click==8.1.7
     # via jishaku
+coloredlogs==15.0.1
+    # via purpbot
 fasttext-wheel==0.9.2
     # via purpbot
 frozenlist==1.4.1
