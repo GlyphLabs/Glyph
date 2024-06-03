@@ -1,17 +1,34 @@
-# the core code of Glyph. this file defines a `Glyph` class that inherits from `discord.ext.commands.Bot`.
-# it initialized some variables, sets up the database, and loads cogs
-
-from discord import Intents, Game, MemberCacheFlags, Thread, HTTPException
-from discord.ext.commands import when_mentioned, Bot
-from discord.abc import GuildChannel, PrivateChannel
-from typing import Optional, List, Tuple
-from asyncpg import create_pool, Pool # type: ignore
-from src.db import Database
-from logging import info, error, getLogger, basicConfig, INFO
+import logging
+import coloredlogs
 from asyncio import sleep
+from typing import Optional, List, Tuple
 
-basicConfig(format="[%(levelname)s] %(asctime)s: %(message)s", level=INFO)
-getLogger("discord.py")
+from asyncpg import create_pool, Pool
+from discord import Intents, Game, MemberCacheFlags, HTTPException, Thread
+from discord.abc import GuildChannel, PrivateChannel
+from discord.ext.commands import when_mentioned, Bot
+
+from src.db import Database
+
+# omg colors
+coloredlogs.install(
+    fmt="[%(levelname)s] %(asctime)s: %(message)s",
+    level="INFO",
+    level_styles={
+        'critical': {'color': 'red', 'bold': True},
+        'error': {'color': 'red'},
+        'warning': {'color': 'yellow'},
+        'notice': {'color': 'magenta'},
+        'info': {'color': 'green'},
+        'debug': {'color': 'blue'},
+    },
+    field_styles={
+        'asctime': {'color': 'cyan'},
+        'levelname': {'color': 'black', 'bold': True},
+        'message': {'color': 'white'},
+    }
+)
+logger = logging.getLogger("discord.py")
 
 
 class Glyph(Bot):
@@ -23,27 +40,19 @@ class Glyph(Bot):
         "scanned_messages_count",
     )
 
-    def __init__(
-        self,
-        database_url: Optional[str] = None,
-        test_mode: Optional[bool] = False,
-    ):
-        # define bot intents.
-        # we'll start from none and enable only the intents we need
+    def __init__(self, database_url: Optional[str] = None, test_mode: Optional[bool] = False):
         intents = Intents.none()
         intents.guilds = True
         intents.message_content = True
         intents.guild_messages = True
 
-        # define some variables that will be used later
         self.db: Database
         self.reaction_roles: List[Tuple[int, int, int]] = []
         self.database_url = database_url
         self.scanned_messages_count: int = 0
 
-        # initialize the bot.
-        # we don't want to cache any members
         member_cache_flags = MemberCacheFlags.none()
+
         super().__init__(
             command_prefix=when_mentioned,
             intents=intents,
@@ -52,42 +61,31 @@ class Glyph(Bot):
             max_messages=None,
             chunk_guilds_at_startup=False,
         )
-        info("initialized bot")
 
-        # load cogs, code files with more features in them
-        for cog in ("fun", "moderation", "utils", "ai", "config", "error"):
+        logger.info("Bot initialized")
+
+        self.load_all_cogs(["fun", "moderation", "utils", "ai", "config", "error"])
+
+    def load_all_cogs(self, cogs: List[str]):
+        """Load all specified cogs."""
+        for cog in cogs:
             try:
-                # the load_extension part is actually doing the cog loading
-                # type: ignore tells mypy to stop crying about it
-                info(
-                    f'loaded cog {self.load_extension(f"src.cogs.{cog}", store=False)[0]}'  # type: ignore
-                )
+                self.load_extension(f"src.cogs.{cog}")
+                logger.info(f"Loaded cog: {cog}")
             except Exception as e:
-                error(f"failed to load cog {cog}: {e}")
+                logger.error(f"Failed to load cog {cog}: {e}")
 
     async def on_ready(self):
-        """code to run when the bot is completely connected
-        logs some information about the bot and connection
-        """
-        info("Glyph is online!")
-        info(f"logged in as {self.user}")
-        info(f"can see {len(self.guilds)} guilds")
-        info(f"{len(self.all_commands)} commands across {len(self.cogs)} cogs")
+        """Runs when the bot is completely connected."""
+        logger.info("Glyph is online!")
+        logger.info(f"Logged in as {self.user}")
+        logger.info(f"Connected to {len(self.guilds)} guilds")
+        logger.info(f"{len(self.all_commands)} commands across {len(self.cogs)} cogs")
 
-        # set the bot's activity to `Playing /info`
         await self.change_presence(activity=Game("/info"))
 
-    async def getch_channel(
-        self, channel_id: int
-    ) -> Optional[GuildChannel | PrivateChannel | Thread]:
-        """gets a channel from the bot's cache
-
-        Args:
-            channel_id (int): the id of the channel to get
-
-        Returns:
-            Optional[Channel]: the channel if found, None otherwise
-        """
+    async def getch_channel(self, channel_id: int) -> Optional[GuildChannel | PrivateChannel | Thread]:
+        """Fetch a channel from cache or API."""
         if channel := self.get_channel(channel_id):
             return channel
         try:
@@ -96,39 +94,47 @@ class Glyph(Bot):
             return None
 
     async def init_db(self):
-        """initializes the database
-
-        Raises:
-            e: the error preventing the bot from connecting to the database
-        """
-
+        """Initialize the database."""
         retry = 1
-        while True:
+        max_retries = 3
+
+        while retry <= max_retries:
             try:
-                self.pool: Pool = await create_pool(self.database_url)  # type: ignore
+                self.pool: Pool = await create_pool(self.database_url)
                 break
             except Exception as e:
-                if retry >= 3:
-                    error(f"database connection error: {e}. exiting")
+                if retry >= max_retries:
+                    logger.error(f"Database connection error: {e}. Exiting.")
                     await self.wait_until_ready()
                     await self.close()
                     raise e
-                    # exit without raising error
-
                 retry += 1
-                error(f"database connection error: {e}. retrying in 3 seconds")
+                logger.error(f"Database connection error: {e}. Retrying in 3 seconds.")
                 await sleep(3)
 
         async with self.pool.acquire() as conn:
             async with conn.transaction():
-                await conn.execute(
-                    "CREATE TABLE IF NOT EXISTS warns(user_id BIGINT, reason TEXT, time BIGINT, guild BIGINT)"
-                )
-                await conn.execute(
-                    "CREATE TABLE IF NOT EXISTS leveling(user_id BIGINT, xp BIGINT)"
-                )
-                await conn.execute(
-                    "CREATE TABLE IF NOT EXISTS guild_config (guild_id BIGINT PRIMARY KEY, ai_reports_channel BIGINT UNIQUE, logs_channel BIGINT UNIQUE, leveling_enabled BOOLEAN DEFAULT FALSE)"
-                )
-        info("initialized database")
+                await conn.execute("""
+                    CREATE TABLE IF NOT EXISTS warns(
+                        user_id BIGINT, 
+                        reason TEXT, 
+                        time BIGINT, 
+                        guild BIGINT
+                    )
+                """)
+                await conn.execute("""
+                    CREATE TABLE IF NOT EXISTS leveling(
+                        user_id BIGINT, 
+                        xp BIGINT
+                    )
+                """)
+                await conn.execute("""
+                    CREATE TABLE IF NOT EXISTS guild_config (
+                        guild_id BIGINT PRIMARY KEY, 
+                        ai_reports_channel BIGINT UNIQUE, 
+                        logs_channel BIGINT UNIQUE, 
+                        leveling_enabled BOOLEAN DEFAULT FALSE
+                    )
+                """)
+        logger.info("Database initialized")
         self.db = Database(self.pool)
