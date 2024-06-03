@@ -1,4 +1,4 @@
-from src.bot import PurpBot
+from src.bot import Glyph
 from discord.ext.commands import Cog
 from discord.commands import SlashCommandGroup
 from discord import Option, ApplicationContext, TextChannel, Embed, Permissions
@@ -7,7 +7,7 @@ from src.views import CreateTicket
 
 
 class Config(Cog):
-    def __init__(self, bot: PurpBot):
+    def __init__(self, bot: Glyph):
         self.bot = bot
 
     def cog_check(self, ctx: ApplicationContext) -> bool:
@@ -35,7 +35,7 @@ class Config(Cog):
         settings = await self.bot.db.get_guild_settings(ctx.guild.id)
         if not settings:
             settings = GuildSettings(
-                guild_id=ctx.guild.i, ai_reports_channel=reports_channel.id
+                guild_id=ctx.guild.id, ai_reports_channel=reports_channel.id
             )
         else:
             settings.ai_reports_channel = reports_channel.id
@@ -54,7 +54,7 @@ class Config(Cog):
         await ctx.respond(
             embed=Embed(
                 description=f"AI moderation has been enabled for this server. Reports will be sent to {reports_channel.mention}.",
-                color=0x6B74C7,
+                color=0xffffff,
             ).set_author(name="AI Moderation Enabled")
         )
 
@@ -72,7 +72,7 @@ class Config(Cog):
             embed=Embed(
                 title="AI Moderation Disabled",
                 description="AI moderation has been disabled for this server.",
-                color=0x6B74C7,
+                color=0xffffff,
             )
         )
 
@@ -85,7 +85,7 @@ class Config(Cog):
         )
         await ctx.respond(
             embed=Embed(
-                color=0x6B74C7,
+                color=0xffffff,
             )
             .set_author(
                 name=f"{ctx.guild.name} Configuration",
@@ -110,7 +110,7 @@ class Config(Cog):
             embed=Embed(
                 title="Configuration Reset",
                 description="The bot's configuration has been reset for this server.",
-                color=0x6B74C7,
+                color=0xffffff,
             )
         )
 
@@ -128,7 +128,7 @@ class Config(Cog):
         econf = Embed(
             title="Tickets",
             description="Click on the button below to create a ticket!",
-            color=0x6B74C7,
+            color=0xffffff,
         )
         await ctx.respond("Tickets configured automatically!", ephemeral=True)
         await panel_channel.send(embed=econf, view=CreateTicket())
@@ -144,5 +144,5 @@ class Config(Cog):
         return await super().cog_command_error(ctx, error)
 
 
-def setup(bot: PurpBot):
+def setup(bot: Glyph):
     bot.add_cog(Config(bot))

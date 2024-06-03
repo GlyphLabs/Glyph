@@ -1,32 +1,40 @@
-[tool.poetry]
+[project]
 name = "purpbot"
 version = "3.1.0"
-description = ""
-authors = ["SaiCodez <79881161+SaiCodez@users.noreply.github.com>", "te <thrizzle@skiff.com>"]
-license = "MIT"
+description = "Add your description here"
+authors = [
+    { name = "te", email = "thrzl@icloud.com" },
+    { name = "SaiCodez", email = "79881161+SaiCodez@users.noreply.github.com" }
+]
+dependencies = [
+    "py-cord>=2.5.0",
+    "asyncpg>=0.29.0",
+    "cachetools>=5.3.3",
+    "python-dotenv>=1.0.1",
+    "jishaku>=2.5.2",
+    "aiofiles>=23.2.1",
+    "fasttext-wheel>=0.9.2",
+    "msgpack>=1.0.8",
+    "humanize>=4.9.0",
+]
 readme = "README.md"
-
-[tool.poetry.dependencies]
-python = "^3.8"
-py-cord = "^2.3.2"
-aiosqlite = "^0.18.0"
-aiofiles = "^22.1.0"
-jishaku = "^2.5.1"
-python-dotenv = "^0.21.1"
-cachetools = "^5.3.0"
-asyncpg = "^0.27.0"
-pybind11 = "^2.10.4"
-fasttext-wheel = "^0.9.2"
-msgpack = "^1.0.5"
-humanize = "^4.8.0"
-
-[tool.poetry.group.dev.dependencies]
-mypy = "^0.991"
-black = "^23.1.0"
-ruff = "^0.0.239"
-types-aiofiles = "^22.1.0.6"
-types-cachetools = "^5.3.0.3"
+requires-python = ">= 3.8"
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.rye]
+managed = true
+dev-dependencies = [
+    "types-aiofiles>=23.2.0.20240403",
+    "types-cachetools>=5.3.0.7",
+    "ruff>=0.4.7",
+    "mypy>=1.10.0",
+]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/purpbot"]

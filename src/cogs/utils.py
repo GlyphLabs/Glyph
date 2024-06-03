@@ -1,4 +1,4 @@
-from src.bot import PurpBot
+from src.bot import Glyph
 from discord.ext.commands import slash_command, Cog
 from discord import (
     Embed,
@@ -6,15 +6,13 @@ from discord import (
     ApplicationContext,
     Webhook,
     Member,
-    NotFound,
-    Emoji,
 )
 from src.views import VoteButtons
 from aiohttp import ClientSession
 
 
 class Utils(Cog):
-    def __init__(self, bot: PurpBot):
+    def __init__(self, bot: Glyph):
         self.bot = bot
 
     @slash_command(name="calc", description="Make the bot do some math!")
@@ -37,7 +35,7 @@ class Utils(Cog):
     ):
         member = member if member else ctx.author
         date_format = "%a, %d %b %Y %I:%M %p"
-        embed = Embed(color=0x6B74C7, description=member.mention)
+        embed = Embed(color=0xffffff, description=member.mention)
         embed.set_author(name=str(member), icon_url=member.avatar.url)
         embed.set_thumbnail(url=member.avatar.url)
         embed.add_field(name="Joined", value=member.joined_at.strftime(date_format))
@@ -72,7 +70,7 @@ class Utils(Cog):
     ):
         async with ClientSession() as session:
             webhook = Webhook.from_url(f"{webhook}", session=session)
-            e = Embed(title=f"{wtitle}", description=f"{wdescription}", color=0x6B74C7)
+            e = Embed(title=f"{wtitle}", description=f"{wdescription}", color=0xffffff)
 
             await webhook.send(embed=e)
             await ctx.respond("Embed sent with webhook!")
@@ -83,14 +81,14 @@ class Utils(Cog):
         embed = Embed(
             title="Vote for us!",
             description="Vote for us by clicking the button below!",
-            color=0x6B74C7,
+            color=0xffffff,
         )
         await ctx.respond(embed=embed, view=VoteButtons())
 
     @slash_command(name="serverinfo", description="Show's information about the server")
     async def serverinfo(self, ctx: ApplicationContext):
         roles = len(ctx.guild.roles)
-        em = Embed(colour=0x6B74C7)
+        em = Embed(colour=0xffffff)
         em.add_field(name="Guild Name", value=f"{ctx.guild.name}", inline=False)
         em.add_field(name="Members", value=ctx.guild.member_count, inline=False)
         em.add_field(
@@ -108,7 +106,7 @@ class Utils(Cog):
     @slash_command(name="membercount", description="View server's member count")
     async def membercount(self, ctx: ApplicationContext):
         embed = Embed(
-            description=f"Membercount: {ctx.guild.member_count}", colour=0x6B74C7
+            description=f"Membercount: {ctx.guild.member_count}", colour=0xffffff
         )
         embed.set_author(name=f"{ctx.guild.name}")
         embed.set_footer(text=ctx.guild.id)
@@ -118,8 +116,8 @@ class Utils(Cog):
     async def info(self, ctx: ApplicationContext):
         embed = Embed(
             title="Information",
-            description="PurpBot is a Discord bot created in pycord. It's a moderation and utility bot to make your server better and easier to moderate. It has tons of features for you to use\n- Use this following command for all the commands and how to use them: `help`\n\n**Developers** - <@!985809728624005130> & <@!839514280251359292>\n**Support Server** - https://discord.gg/NqZuBvtrEJ",
-            color=0x6B74C7,
+            description="Glyph is a Discord bot created in pycord. It's a moderation and utility bot to make your server better and easier to moderate. It has tons of features for you to use\n- Use this following command for all the commands and how to use them: `help`\n\n**Developers** - <@!536644802595520534> & <@!825803913462284328>\n**Support Server** - coming soon:tm:",
+            color=0xffffff,
         )
         embed.add_field(name="Version:", value="v3.1.0")
         await ctx.respond(embed=embed)
@@ -141,21 +139,21 @@ class Utils(Cog):
         edescription: Option(str, description="The embed's description", required=True),
         etitle: Option(str="** **", description="The embed's title", required=True),
     ):
-        embed = Embed(title=f"{etitle}", description=f"{edescription}", color=0x6B74C7)
+        embed = Embed(title=f"{etitle}", description=f"{edescription}", color=0xffffff)
         await ctx.respond(embed=embed)
 
     @slash_command(name="invite", description="Invite the bot")
     async def invite(self, ctx: ApplicationContext):
         embed = Embed(
             description="Invite me [here](https://discord.com/api/oauth2/authorize?client_id=849823707429994517&permissions=274877991936&scope=applications.commands%20bot)",
-            color=0x6B74C7,
+            color=0xffffff,
         )
         await ctx.respond(embed=embed)
 
     @slash_command(name="guildcount", description="shows bot's servers")
     async def guildcount(self, ctx: ApplicationContext):
         embed = Embed(
-            description=f"PurpBot is in {len(self.bot.guilds)} servers!", color=0x6B74C7
+            description=f"Glyph is in {len(self.bot.guilds)} servers!", color=0xffffff
         )
         await ctx.respond(embed=embed)
 
@@ -165,7 +163,7 @@ class Utils(Cog):
 
     @slash_command(name="help", description="Help Command")
     async def _help(self, ctx: ApplicationContext):
-        embed = Embed(title="PurpBot Help", color=0x6B74C7)
+        embed = Embed(title="Glyph Help", color=0xffffff)
         for name, cog in self.bot.cogs.items():
             if not cog.get_commands() or name.lower() == "jishaku":
                 continue
@@ -200,21 +198,21 @@ class Utils(Cog):
     ):
         if not member:
             authoravatar = ctx.author.avatar.url
-            embed = Embed(color=0x6B74C7)
+            embed = Embed(color=0xffffff)
             embed.set_image(url=authoravatar)
         else:
             useravatar = member.avatar.url
-            embed = Embed(color=0x6B74C7)
+            embed = Embed(color=0xffffff)
             embed.set_image(url=useravatar)
         await ctx.respond(embed=embed)
 
     @slash_command(name="servericon", description="Sends the server icon")
     async def servericon(self, ctx: ApplicationContext):
         servericon = ctx.guild.icon.url
-        embed = Embed(color=0x6B74C7)
+        embed = Embed(color=0xffffff)
         embed.set_image(url=servericon)
         await ctx.respond(embed=embed)
 
 
-def setup(bot: PurpBot):
+def setup(bot: Glyph):
     bot.add_cog(Utils(bot))
