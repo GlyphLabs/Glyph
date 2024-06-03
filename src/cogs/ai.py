@@ -201,7 +201,7 @@ class AiModeration(Cog):
                             f"`{f}`: **{round(s*100)}%**"
                             for f, s in list(i for i in score.items())[1:4]
                         ),
-                        color=0x6B74C7,
+                        color=0xffffff,
                     )
                     .set_author(
                         name=f"{str(author).replace('#0','')} ({author.id})",

@@ -44,7 +44,7 @@ async def on_message(message: Message):
     """    
     if message.content == bot.user.mention: # type: ignore
         embed = Embed(
-            description="My default prefix is: `/` (Slash Commands)", color=0x6B74C7
+            description="My default prefix is: `/` (Slash Commands)", color=0xffffff
         )
         await message.channel.send(embed=embed)
     await bot.process_commands(message)

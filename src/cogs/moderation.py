@@ -202,7 +202,7 @@ class Moderation(Cog):
         rows = await self.bot.db.get_warns(member.id, ctx.guild.id)
         if rows:
             rows.sort(key=lambda x: x.time, reverse=True)
-            embed = Embed(colour=0x6B74C7, title=f"Warnings for {member.name}")
+            embed = Embed(colour=0xffffff, title=f"Warnings for {member.name}")
             warnnum = 0
             for row in rows:
                 warnnum += 1
@@ -212,7 +212,7 @@ class Moderation(Cog):
                 )
             await ctx.respond(embed=embed)
         else:
-            embed = Embed(colour=0x6B74C7, title=f"No warnings for {member.name}")
+            embed = Embed(colour=0xffffff, title=f"No warnings for {member.name}")
             await ctx.respond(embed=embed)
 
     @slash_command(name="timeout", description="Puts a member in timeout")

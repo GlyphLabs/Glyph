@@ -54,7 +54,7 @@ class Config(Cog):
         await ctx.respond(
             embed=Embed(
                 description=f"AI moderation has been enabled for this server. Reports will be sent to {reports_channel.mention}.",
-                color=0x6B74C7,
+                color=0xffffff,
             ).set_author(name="AI Moderation Enabled")
         )
 
@@ -72,7 +72,7 @@ class Config(Cog):
             embed=Embed(
                 title="AI Moderation Disabled",
                 description="AI moderation has been disabled for this server.",
-                color=0x6B74C7,
+                color=0xffffff,
             )
         )
 
@@ -85,7 +85,7 @@ class Config(Cog):
         )
         await ctx.respond(
             embed=Embed(
-                color=0x6B74C7,
+                color=0xffffff,
             )
             .set_author(
                 name=f"{ctx.guild.name} Configuration",
@@ -110,7 +110,7 @@ class Config(Cog):
             embed=Embed(
                 title="Configuration Reset",
                 description="The bot's configuration has been reset for this server.",
-                color=0x6B74C7,
+                color=0xffffff,
             )
         )
 
@@ -128,7 +128,7 @@ class Config(Cog):
         econf = Embed(
             title="Tickets",
             description="Click on the button below to create a ticket!",
-            color=0x6B74C7,
+            color=0xffffff,
         )
         await ctx.respond("Tickets configured automatically!", ephemeral=True)
         await panel_channel.send(embed=econf, view=CreateTicket())
