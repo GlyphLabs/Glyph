@@ -3,13 +3,13 @@ from discord.colour import Colour
 from discord.commands.options import Option
 from discord.ext.commands import MissingPermissions, Context
 from discord.message import Message
-from src.bot import PurpBot
+from src.bot import Glyph
 from dotenv import load_dotenv
 from os import environ
 
 load_dotenv()
 
-bot = PurpBot(
+bot = Glyph(
     database_url=environ.get("DATABASE_URL"),
     test_mode=bool(int(environ.get("TEST_MODE", 0))),
 )

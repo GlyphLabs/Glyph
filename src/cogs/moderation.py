@@ -1,4 +1,4 @@
-from src.bot import PurpBot
+from src.bot import Glyph
 from discord.ext.commands import (
     slash_command,
     Cog,
@@ -13,7 +13,7 @@ from humanize import naturaldelta
 
 
 class Moderation(Cog):
-    def __init__(self, bot: PurpBot):
+    def __init__(self, bot: Glyph):
         self.bot = bot
 
     async def addwarn(self, ctx: ApplicationContext, reason: str, user: Member):
@@ -363,5 +363,5 @@ class Moderation(Cog):
             raise error
 
 
-def setup(bot: PurpBot):
+def setup(bot: Glyph):
     bot.add_cog(Moderation(bot))

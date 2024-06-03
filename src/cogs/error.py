@@ -1,12 +1,12 @@
 # an error handling cog
 from discord.ext.commands import Cog
-from src.bot import PurpBot
+from src.bot import Glyph
 from discord.errors import Forbidden, HTTPException, NotFound
 from discord import Embed
 
 
 class Error(Cog):
-    def __init__(self, bot: PurpBot):
+    def __init__(self, bot: Glyph):
         self.bot = bot
 
     @Cog.listener()
@@ -25,5 +25,5 @@ class Error(Cog):
             raise error
 
 
-def setup(bot: PurpBot):
+def setup(bot: Glyph):
     bot.add_cog(Error(bot))

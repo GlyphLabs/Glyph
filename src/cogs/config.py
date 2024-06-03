@@ -1,4 +1,4 @@
-from src.bot import PurpBot
+from src.bot import Glyph
 from discord.ext.commands import Cog
 from discord.commands import SlashCommandGroup
 from discord import Option, ApplicationContext, TextChannel, Embed, Permissions
@@ -7,7 +7,7 @@ from src.views import CreateTicket
 
 
 class Config(Cog):
-    def __init__(self, bot: PurpBot):
+    def __init__(self, bot: Glyph):
         self.bot = bot
 
     def cog_check(self, ctx: ApplicationContext) -> bool:
@@ -144,5 +144,5 @@ class Config(Cog):
         return await super().cog_command_error(ctx, error)
 
 
-def setup(bot: PurpBot):
+def setup(bot: Glyph):
     bot.add_cog(Config(bot))

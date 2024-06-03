@@ -1,4 +1,4 @@
-PurpBot's code is open source for safety purposes only. You can still use our code, but you are not allowed to claim that it's yours, we will have to reach out to you.
+Glyph's code is open source for safety purposes only. You can still use our code, but you are not allowed to claim that it's yours, we will have to reach out to you.
 
 # cotntributing
 ## getting started
@@ -13,7 +13,7 @@ you can find the required variables in the `.env.example` file.
 ### running the bot
 to run the bot, you can run the `main.py` file. you should first enter the python environment by running `. .venv/bin/activate` on linux or `.venv\Scripts\activate` on windows.
 ## about the code
-PurpBot's code is divided into 3 main parts:
+Glyph's code is divided into 3 main parts:
 
 ### the core (`src/bot`)
 this is where the primary code is located. the core could essentially run on it's own.

@@ -1,5 +1,5 @@
 from __future__ import annotations
-from src.bot import PurpBot
+from src.bot import Glyph
 from discord.ext.commands import Cog
 from discord.channel import TextChannel
 from discord import Message, Embed, ButtonStyle, Interaction
@@ -56,7 +56,7 @@ class AiPartialMessage:
 class AiModeration(Cog):
     __slots__ = ["bot"]
 
-    def __init__(self, bot: PurpBot):
+    def __init__(self, bot: Glyph):
         self.bot = bot
 
     def build_view(self, message: AiPartialMessage, disabled: bool = False) -> View:
@@ -223,5 +223,5 @@ class AiModeration(Cog):
             logger.error(f"error while scanning message {message_id}: {e}")
 
 
-def setup(bot: PurpBot):
+def setup(bot: Glyph):
     bot.add_cog(AiModeration(bot))

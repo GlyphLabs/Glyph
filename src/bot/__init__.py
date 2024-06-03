@@ -1,4 +1,4 @@
-# the core code of PurpBot. this file defines a `PurpBot` class that inherits from `discord.ext.commands.Bot`.
+# the core code of Glyph. this file defines a `Glyph` class that inherits from `discord.ext.commands.Bot`.
 # it initialized some variables, sets up the database, and loads cogs
 
 from discord import Intents, Game, MemberCacheFlags, Thread, HTTPException
@@ -14,7 +14,7 @@ basicConfig(format="[%(levelname)s] %(asctime)s: %(message)s", level=INFO)
 getLogger("discord.py")
 
 
-class PurpBot(Bot):
+class Glyph(Bot):
     __slots__ = (
         "reaction_roles",
         "pool",
@@ -69,7 +69,7 @@ class PurpBot(Bot):
         """code to run when the bot is completely connected
         logs some information about the bot and connection
         """
-        info("PurpBot is online!")
+        info("Glyph is online!")
         info(f"logged in as {self.user}")
         info(f"can see {len(self.guilds)} guilds")
         info(f"{len(self.all_commands)} commands across {len(self.cogs)} cogs")

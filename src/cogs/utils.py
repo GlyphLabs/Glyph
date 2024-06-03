@@ -1,4 +1,4 @@
-from src.bot import PurpBot
+from src.bot import Glyph
 from discord.ext.commands import slash_command, Cog
 from discord import (
     Embed,
@@ -12,7 +12,7 @@ from aiohttp import ClientSession
 
 
 class Utils(Cog):
-    def __init__(self, bot: PurpBot):
+    def __init__(self, bot: Glyph):
         self.bot = bot
 
     @slash_command(name="calc", description="Make the bot do some math!")
@@ -214,5 +214,5 @@ class Utils(Cog):
         await ctx.respond(embed=embed)
 
 
-def setup(bot: PurpBot):
+def setup(bot: Glyph):
     bot.add_cog(Utils(bot))
