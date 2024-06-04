@@ -1,4 +1,4 @@
-from src.bot import PurpBot
+from src.bot import Glyph
 from discord.ext.commands import (
     slash_command,
     Cog,
@@ -9,10 +9,11 @@ from discord.ext.commands import (
 from discord import Embed, Option, ApplicationContext, Member, Colour, Role
 from discord.ext.commands.errors import MissingPermissions, CommandOnCooldown
 from datetime import timedelta
+from humanize import naturaldelta
 
 
 class Moderation(Cog):
-    def __init__(self, bot: PurpBot):
+    def __init__(self, bot: Glyph):
         self.bot = bot
 
     async def addwarn(self, ctx: ApplicationContext, reason: str, user: Member):
@@ -199,7 +200,7 @@ class Moderation(Cog):
         rows = await self.bot.db.get_warns(member.id, ctx.guild.id)
         if rows:
             rows.sort(key=lambda x: x.time, reverse=True)
-            embed = Embed(colour=0x6B74C7, title=f"Warnings for {member.name}")
+            embed = Embed(colour=0xffffff, title=f"Warnings for {member.name}")
             warnnum = 0
             for row in rows:
                 warnnum += 1
@@ -209,17 +210,33 @@ class Moderation(Cog):
                 )
             await ctx.respond(embed=embed)
         else:
-            embed = Embed(colour=0x6B74C7, title=f"No warnings for {member.name}")
+            embed = Embed(colour=0xffffff, title=f"No warnings for {member.name}")
             await ctx.respond(embed=embed)
 
     @slash_command(name="timeout", description="Puts a member in timeout")
-    async def timeout(self, ctx, member: Option(Member), minutes: Option(int)):
+    async def timeout(
+        self,
+        ctx,
+        member: Option(Member),
+        time: Option(str, description="A period of time, expressed as 1d, 5m, etc."),
+    ):
         """Apply a timeout to a member"""
+        time_units = {
+            "s": 1,  # seconds
+            "m": 60,  # minutes
+            "h": 3600,  # hours
+            "d": 86400,  # days
+        }
 
-        duration = timedelta(minutes=minutes)
+        try:
+            seconds = int(time[:-1]) * time_units[(time[-1])]
+        except Exception:
+            await ctx.respond(f"Invalid time `{time}`")
+
+        duration = timedelta(seconds=seconds)
         # timeout for the amount of time given, then remove timeout
         await member.timeout_for(duration)
-        await ctx.reply(f"Member timed out for {minutes} minutes.")
+        await ctx.respond(f"Member timed out for {naturaldelta(duration)}.")
 
     @slash_command(name="purge", description="Delete a certain amount of messages")
     @has_permissions(manage_messages=True)
@@ -344,5 +361,5 @@ class Moderation(Cog):
             raise error
 
 
-def setup(bot: PurpBot):
+def setup(bot: Glyph):
     bot.add_cog(Moderation(bot))

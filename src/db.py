@@ -1,8 +1,8 @@
 from __future__ import annotations
-from cachetools import TTLCache
-from msgpack import packb, unpackb
+from cachetools import LFUCache
+from msgpack import packb, unpackb # type: ignore
 from typing import Optional
-from asyncpg import Pool
+from asyncpg import Pool # type: ignore
 from datetime import datetime
 
 
@@ -27,8 +27,7 @@ class Database:
 
     def __init__(self, pool: Pool):
         self.pool = pool
-        self.__cache: TTLCache[int, bytes] = TTLCache(maxsize=100, ttl=600)
-        self.__level_cache: TTLCache[int, int] = TTLCache(maxsize=100, ttl=600)
+        self.__cache: LFUCache[int, bytes] = LFUCache(maxsize=100)
 
     async def create_warn(self, user_id: int, guild: int, reason: str) -> Warn:
         async with self.pool.acquire() as conn:
@@ -71,87 +70,73 @@ class Database:
 
     async def set_guild_settings(self, guild_id: int, settings: GuildSettings) -> None:
         async with self.pool.acquire() as conn:
-            await conn.execute(
-                """INSERT INTO guild_config
-                    (guild_id, ai_reports_channel, logs_channel, level_system)
+            async with conn.transaction():
+                await conn.execute(
+                    """INSERT INTO guild_config
+                    (guild_id, ai_reports_channel, logs_channel, leveling_enabled)
                     VALUES ($1, $2, $3, $4)
                     ON CONFLICT (guild_id) DO UPDATE
-                    SET ai_reports_channel = $2, logs_channel = $3, level_system = $4""",
-                guild_id,
-                settings.ai_reports_channel,
-                settings.logs_channel,
-                settings.level_system,
-            )
-            self.__cache[guild_id] = settings.serialize()
-
-    async def get_level_stats(self, user_id: int, guild_id: int) -> LevelStats:
-        if f"{guild_id}-{user_id}" in self.__level_cache:
-            return self.__level_cache[f"{guild_id}-{user_id}"]
-        async with self.pool.acquire() as conn:
-            data = await conn.fetchrow(
-                "SELECT * FROM levels WHERE user_id = $1 AND guild_id = $2",
-                user_id,
-                guild_id,
-            )
-            if data:
-                return LevelStats(**{k: v for k, v in data.items()})
-            else:
-                await conn.execute(
-                    "INSERT INTO levels (level, xp, user_id, guild_id) VALUES ($1, $2, $3, $4)",
-                    0,
-                    0,
-                    user_id,
+                    SET ai_reports_channel = $2, logs_channel = $3, leveling_enabled = $4""",
                     guild_id,
+                    settings.ai_reports_channel,
+                    settings.logs_channel,
+                    settings.leveling_enabled,
                 )
-                stats = LevelStats(0, 0, user_id, guild_id)
-                self.__level_cache[f"{guild_id}-{user_id}"] = stats
-                return stats
+                self.__cache[guild_id] = settings.serialize()
+    
+    async def get_xp(self, user_id: int) -> int:
+        async with self.pool.acquire() as conn:
+            async with conn.transaction():
+                data = await conn.fetchrow(
+                    "SELECT xp FROM leveling WHERE user_id = $1", user_id
+                )
+                return data["xp"] if data else 0
+    
+    async def add_xp(self, user_id: int, xp: int) -> int:
+        async with self.pool.acquire() as conn:
+            async with conn.transaction():
+                await conn.execute(
+                    """INSERT INTO leveling (user_id, xp)
+                    VALUES ($1, $2)
+                    ON CONFLICT (user_id) DO UPDATE
+                    SET xp = leveling.xp + $2""",
+                    user_id,
+                    xp,
+                )
+                return await self.get_xp(user_id)
 
-    async def add_xp(self, guild_id: int, user_id: int, xp: int) -> None:
-        settings = await self.get_guild_settings(guild_id)
-        if not settings.level_system:
-            return
-        stats = await self.get_level_stats(user_id, guild_id)
-        stats.xp += xp
-        print(stats.xp)
-        print(stats.level * 100)
-        if stats.xp >= stats.level * 100:
-            stats.level += 1
-            stats.xp = 0
+    async def set_xp(self, user_id: int, xp: int) -> int:
+        async with self.pool.acquire() as conn:
+            async with conn.transaction():
+                await conn.execute(
+                    "INSERT INTO leveling (user_id, xp) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET xp = $2",
+                    user_id,
+                    xp,
+                )
+                return xp
 
 
-        async with self.pool.acquire() as conn:    
-            await conn.execute(
-                "UPDATE levels SET level = $1, xp = $2 WHERE user_id = $3 AND guild_id = $4",
-                stats.level,
-                stats.xp,
-                user_id,
-                guild_id,
-            )
-
-        self.__level_cache[f"{guild_id}-{user_id}"] = stats.serialize()
-
-
-class GuildSettings(MsgPackMixin):  # type: ignore
-    __slots__ = ("guild_id", "ai_reports_channel", "logs_channel", "level_system")
+class GuildSettings(MsgPackMixin):
+    __slots__ = ("guild_id", "ai_reports_channel", "logs_channel", "leveling_enabled")
 
     def __init__(
         self,
         guild_id: int,
         ai_reports_channel: Optional[int] = None,
         logs_channel: Optional[int] = None,
-        level_system: bool = False,
+        leveling_enabled: bool = False,
+        **kwargs,  # just collapse extra data instead of screaming and crying
     ):
         self.guild_id: int = guild_id
         self.ai_reports_channel: Optional[int] = ai_reports_channel
         self.logs_channel: Optional[int] = logs_channel
-        self.level_system: bool = level_system
+        self.leveling_enabled: bool = leveling_enabled
 
     def __repr__(self):
         return f"<GuildSettings(guild_id={self.guild_id})>"
 
 
-class Warn(MsgPackMixin):  # type: ignore
+class Warn(MsgPackMixin):
     __slots__ = ("user_id", "reason", "time", "guild")
 
     def __init__(self, user_id: int, reason: str, time: float, guild: int):
@@ -163,15 +148,13 @@ class Warn(MsgPackMixin):  # type: ignore
     def __repr__(self):
         return f"<Warn(user_id={self.user_id}, reason={self.reason}, time={self.time}, guild={self.guild})>"
 
+class Leveling(MsgPackMixin):
+    __slots__ = ("user_id", "xp")
 
-class LevelStats(MsgPackMixin):
-    __slots__ = ("user_id", "guild_id", "xp", "level")
-
-    def __init__(self, user_id: int, guild_id: int, xp: int, level: int):
+    def __init__(self, user_id: int, xp: int):
         self.user_id: int = user_id
-        self.guild_id: int = guild_id
         self.xp: int = xp
-        self.level: int = level
+
 
     def __repr__(self):
-        return f"<LevelStats(user_id={self.user_id}, guild_id={self.guild_id}, xp={self.xp}, level={self.level})>"
+        return f"<Leveling(user_id={self.user_id}, xp={self.xp})>"

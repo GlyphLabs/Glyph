@@ -1,16 +1,37 @@
-from discord import Intents, Game, MemberCacheFlags, TextChannel
-from discord.ext.commands import when_mentioned, Bot
-from typing import Optional, List, Tuple
-from asyncpg import create_pool, Pool
-from src.db import Database
-from logging import info, error, getLogger, basicConfig, INFO
+import logging
+import coloredlogs
 from asyncio import sleep
+from typing import Optional, List, Tuple
 
-basicConfig(format="[%(levelname)s] %(asctime)s: %(message)s", level=INFO)
-getLogger("discord.py")
+from asyncpg import create_pool, Pool
+from discord import Intents, Game, MemberCacheFlags, HTTPException, Thread
+from discord.abc import GuildChannel, PrivateChannel
+from discord.ext.commands import when_mentioned, Bot
+
+from src.db import Database
+
+# omg colors
+coloredlogs.install(
+    fmt="[%(levelname)s] %(asctime)s: %(message)s",
+    level="INFO",
+    level_styles={
+        'critical': {'color': 'red', 'bold': True},
+        'error': {'color': 'red'},
+        'warning': {'color': 'yellow'},
+        'notice': {'color': 'magenta'},
+        'info': {'color': 'green'},
+        'debug': {'color': 'blue'},
+    },
+    field_styles={
+        'asctime': {'color': 'cyan'},
+        'levelname': {'color': 'black', 'bold': True},
+        'message': {'color': 'white'},
+    }
+)
+logger = logging.getLogger("discord.py")
 
 
-class PurpBot(Bot):
+class Glyph(Bot):
     __slots__ = (
         "reaction_roles",
         "pool",
@@ -19,23 +40,19 @@ class PurpBot(Bot):
         "scanned_messages_count",
     )
 
-    def __init__(
-        self,
-        database_url: Optional[str] = None,
-        test_mode: Optional[bool] = False,
-    ):
+    def __init__(self, database_url: Optional[str] = None, test_mode: Optional[bool] = False):
         intents = Intents.none()
         intents.guilds = True
         intents.message_content = True
         intents.guild_messages = True
 
-        self.pool: Optional[Pool]
         self.db: Database
         self.reaction_roles: List[Tuple[int, int, int]] = []
         self.database_url = database_url
         self.scanned_messages_count: int = 0
 
         member_cache_flags = MemberCacheFlags.none()
+
         super().__init__(
             command_prefix=when_mentioned,
             intents=intents,
@@ -44,59 +61,80 @@ class PurpBot(Bot):
             max_messages=None,
             chunk_guilds_at_startup=False,
         )
-        info("initialized bot")
 
-        for cog in ("fun", "moderation", "utils", "ai", "config", "error", "levels"):
+        logger.info("Bot initialized")
+
+        self.load_all_cogs(["fun", "moderation", "utils", "ai", "config", "error"])
+
+    def load_all_cogs(self, cogs: List[str]):
+        """Load all specified cogs."""
+        for cog in cogs:
             try:
-                info(
-                    f'loaded cog {self.load_extension(f"src.cogs.{cog}", store=False)[0]}'
-                )
+                self.load_extension(f"src.cogs.{cog}")
+                logger.info(f"Loaded cog: {cog}")
             except Exception as e:
-                error(f"failed to load cog {cog}: {e}")
+                logger.error(f"Failed to load cog {cog}: {e}")
 
     async def on_ready(self):
-        info("PurpBot is online!")
+        """Runs when the bot is completely connected."""
+        logger.info("Glyph is online!")
+        logger.info(f"Logged in as {self.user}")
+        logger.info(f"Connected to {len(self.guilds)} guilds")
+        logger.info(f"{len(self.all_commands)} commands across {len(self.cogs)} cogs")
+
         await self.change_presence(activity=Game("/info"))
 
-    async def getch_channel(self, channel_id: int) -> TextChannel:
+    async def getch_channel(self, channel_id: int) -> Optional[GuildChannel | PrivateChannel | Thread]:
+        """Fetch a channel from cache or API."""
         if channel := self.get_channel(channel_id):
             return channel
-        else:
+        try:
+            return await self.fetch_channel(channel_id)
+        except HTTPException:
+            return None
+
+    async def init_db(self):
+        """Initialize the database."""
+        retry = 1
+        max_retries = 3
+
+        while retry <= max_retries:
             try:
-                return await self.fetch_channel(channel_id)
-            except Exception:
-                return None
-
-    async def setup_bot(self):
-        if self.database_url:
-            retry = 1
-            while True:
-                try:
-                    self.pool: Pool = await create_pool(self.database_url)
-                    break
-                except Exception as e:
-                    if retry >= 3:
-                        error("failed to connect to database, exiting")
-                        await self.wait_until_ready()
-                        await self.close()
-                        raise e
-                        # exit without raising error
-
-                    retry += 1
-                    info("failed to connect to database, retrying in 3 seconds")
-                    await sleep(3)
-            self.db = Database(self.pool)
+                self.pool: Pool = await create_pool(self.database_url)
+                break
+            except Exception as e:
+                if retry >= max_retries:
+                    logger.error(f"Database connection error: {e}. Exiting.")
+                    await self.wait_until_ready()
+                    await self.close()
+                    raise e
+                retry += 1
+                logger.error(f"Database connection error: {e}. Retrying in 3 seconds.")
+                await sleep(3)
 
         async with self.pool.acquire() as conn:
             async with conn.transaction():
-                await conn.execute(
-                    "CREATE TABLE IF NOT EXISTS warns(user_id BIGINT, reason TEXT, time BIGINT, guild BIGINT)"
-                )
-                await conn.execute(
-                    "CREATE TABLE IF NOT EXISTS guild_config (guild_id BIGINT PRIMARY KEY, ai_reports_channel BIGINT UNIQUE, logs_channel BIGINT UNIQUE, level_system BOOLEAN)"
-                )
-                await conn.execute(
-                    "CREATE TABLE IF NOT EXISTS levels (level INTEGER, xp INTEGER, user_id BIGINT, guild_id BIGINT)"
-                )
-        info("initialized database")
-        return
+                await conn.execute("""
+                    CREATE TABLE IF NOT EXISTS warns(
+                        user_id BIGINT, 
+                        reason TEXT, 
+                        time BIGINT, 
+                        guild BIGINT
+                    )
+                """)
+                await conn.execute("""
+                    CREATE TABLE IF NOT EXISTS leveling(
+                        user_id BIGINT, 
+                        xp BIGINT
+                    )
+                """)
+                await conn.execute("""
+                    CREATE TABLE IF NOT EXISTS guild_config (
+                        guild_id BIGINT PRIMARY KEY, 
+                        ai_reports_channel BIGINT UNIQUE, 
+                        logs_channel BIGINT UNIQUE, 
+                        leveling_enabled BOOLEAN DEFAULT FALSE
+                    )
+                """)
+        logger.info("Database initialized")
+        self.db = Database(self.pool)

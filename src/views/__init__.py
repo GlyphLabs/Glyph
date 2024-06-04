@@ -12,8 +12,8 @@ class VoteButtons(View):
         super().__init__()
         self.add_item(
             Button(
-                label="Vote for Purpbot",
-                url="https://top.gg/bot/849823707429994517/vote",
+                label="Vote for Glyph (coming soon)",
+                url="https://purplabs.github.io",
             )
         )
 
@@ -34,7 +34,9 @@ class CreateTicket(View):
             interaction.guild.default_role: PermissionOverwrite(read_messages=False),
             interaction.user: PermissionOverwrite(read_messages=True),
         }
-        channel = await interaction.guild.create_text_channel(f"{interaction.user}-ticket", overwrites=overwrtes)  # type: ignore
+        channel = await interaction.guild.create_text_channel(
+            f"{interaction.user}-ticket", overwrites=overwrtes
+        )  # type: ignore
         await interaction.response.send_message(
             f"Channel created! You can go here: {channel.mention}", ephemeral=True
         )

@@ -1,13 +1,15 @@
-import discord
-from discord.commands import Option
-from discord.ext.commands import MissingPermissions
-from src.bot import PurpBot
+from discord.embeds import Embed
+from discord.colour import Colour
+from discord.commands.options import Option
+from discord.ext.commands import MissingPermissions, Context
+from discord.message import Message
+from src.bot import Glyph
 from dotenv import load_dotenv
 from os import environ
 
 load_dotenv()
 
-bot = PurpBot(
+bot = Glyph(
     database_url=environ.get("DATABASE_URL"),
     test_mode=bool(int(environ.get("TEST_MODE", 0))),
 )
@@ -15,10 +17,16 @@ bot.remove_command("help")
 
 
 @bot.event
-async def on_command_error(ctx, error):
+async def on_command_error(ctx: Context, error: Exception):
+    """central error handling for commands
+
+    Args:
+        ctx (Context): the information about the execution of the command
+        error (Exception): the error itself
+    """    
     if isinstance(error, MissingPermissions):
-        embed = discord.Embed(
-            description="Missing required permissions", color=discord.Colour.red()
+        embed = Embed(
+            description="Missing required permissions", color=Colour.red()
         )
         embed.set_author(
             name="Error",
@@ -28,10 +36,15 @@ async def on_command_error(ctx, error):
 
 
 @bot.event
-async def on_message(message):
-    if message.content == bot.user.mention:
-        embed = discord.Embed(
-            description="My default prefix is: `/` (Slash Commands)", color=0x6B74C7
+async def on_message(message: Message):
+    """what to do when a message is sent
+
+    Args:
+        message (discord.Message): the message itself
+    """    
+    if message.content == bot.user.mention: # type: ignore
+        embed = Embed(
+            description="My default prefix is: `/` (Slash Commands)", color=0xffffff
         )
         await message.channel.send(embed=embed)
     await bot.process_commands(message)
@@ -50,7 +63,7 @@ async def search(ctx, *, query):
 
 @bot.slash_command(name="poll", description="Creates a poll")
 async def poll(ctx, question: Option(str), a: Option(str), b: Option(str)):
-    embed = discord.Embed(title=question, description=f"🅰️: {a}\n🅱️: {b}")
+    embed = Embed(title=question, description=f"🅰️: {a}\n🅱️: {b}")
     await ctx.respond(embed=embed)
     msg = await ctx.interaction.original_response()
     await msg.add_reaction("🅰️")
@@ -58,5 +71,5 @@ async def poll(ctx, question: Option(str), a: Option(str), b: Option(str)):
 
 
 bot.load_extension("jishaku")
-bot.loop.create_task(bot.setup_bot())
+bot.loop.create_task(bot.init_db())
 bot.run(environ.get("TOKEN"))
