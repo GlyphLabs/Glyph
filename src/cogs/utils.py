@@ -116,7 +116,7 @@ class Utils(Cog):
     async def info(self, ctx: ApplicationContext):
         embed = Embed(
             title="Information",
-            description="Glyph is a Discord bot created in pycord. It's a moderation and utility bot to make your server better and easier to moderate. It has tons of features for you to use\n- Use this following command for all the commands and how to use them: `help`\n\n**Developers** - <@!536644802595520534> & <@!825803913462284328>\n**Support Server** - coming soon:tm:",
+            description="Glyph is a Discord bot created in pycord. It's a moderation and utility bot to make your server better and easier to moderate. It has tons of features for you to use\n- Use this following command for all the commands and how to use them: `help`\n\n**Developers** - <@!536644802595520534> & <@!825803913462284328>\n**Support Server** - https://discord.gg/mxR9xzprNG",
             color=0xffffff,
         )
         embed.add_field(name="Version:", value="v3.1.0")
