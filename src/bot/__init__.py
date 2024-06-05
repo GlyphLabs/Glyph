@@ -56,7 +56,7 @@ class Glyph(Bot):
         super().__init__(
             command_prefix=when_mentioned,
             intents=intents,
-            debug_guilds=[1050102412104437801] if test_mode else None,
+            debug_guilds=[1247673555462787143] if test_mode else None,
             member_cache_flags=member_cache_flags,
             max_messages=None,
             chunk_guilds_at_startup=False,
@@ -64,7 +64,7 @@ class Glyph(Bot):
 
         logger.info("Bot initialized")
 
-        self.load_all_cogs(["fun", "moderation", "utils", "ai", "config", "error"])
+        self.load_all_cogs(["fun", "moderation", "utils", "ai", "config", "error", "events"])    
 
     def load_all_cogs(self, cogs: List[str]):
         """Load all specified cogs."""
