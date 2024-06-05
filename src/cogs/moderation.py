@@ -10,7 +10,7 @@ from discord.ext.commands import (
 from discord import Embed, ApplicationContext, Member, Colour, Role
 from discord.ext.commands.errors import MissingPermissions, CommandOnCooldown
 from datetime import timedelta
-from humanize import naturaldelta
+from humanize import naturaldelta # type: ignore
 
 
 class Moderation(Cog):

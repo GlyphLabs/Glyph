@@ -9,6 +9,8 @@ from discord import (
 )
 from src.views import VoteButtons
 from aiohttp import ClientSession
+from discord.commands import SlashCommandGroup, option
+from discord import Embed, ApplicationContext, Member, Colour, Role
 
 
 class Utils(Cog):
@@ -16,12 +18,15 @@ class Utils(Cog):
         self.bot = bot
 
     @slash_command(name="calc", description="Make the bot do some math!")
+    @option(name="num1", description="First number", type=str, required=True)
+    @option(name="operation", description="Calculation", type=str, choices=["+", "-", "*", "/"], required=True)
+    @option(name="num2", description="Second number", type=str, required=True)
     async def calculate(
         self,
         ctx: ApplicationContext,
-        num1: Option(str),
-        operation: Option(str, choices=["+", "-", "*", "/"]),
-        num2: Option(str),
+        num1: int,
+        operation: str,
+        num2: int,
     ):
         if operation not in ["+", "-", "*", "/"]:
             await ctx.respond("Please type a valid operation type.")
@@ -30,15 +35,16 @@ class Utils(Cog):
             await ctx.respond(f"{var} = {eval(var)}")
 
     @slash_command(name="userinfo", description="Get information on a user")
+    @option(name="member", description="The member you want get information", type=Member, required=False)
     async def userinfo(
-        self, ctx: ApplicationContext, member: Option(Member, required=False)
+        self, ctx: ApplicationContext, member: Member
     ):
-        member = member if member else ctx.author
+        member = member if member else ctx.author # type: ignore
         date_format = "%a, %d %b %Y %I:%M %p"
         embed = Embed(color=0xffffff, description=member.mention)
-        embed.set_author(name=str(member), icon_url=member.avatar.url)
-        embed.set_thumbnail(url=member.avatar.url)
-        embed.add_field(name="Joined", value=member.joined_at.strftime(date_format))
+        embed.set_author(name=str(member), icon_url=member.avatar.url) # type: ignore
+        embed.set_thumbnail(url=member.avatar.url) # type: ignore
+        embed.add_field(name="Joined", value=member.joined_at.strftime(date_format)) # type: ignore
         embed.add_field(
             name="Registered", value=member.created_at.strftime(date_format)
         )
@@ -61,15 +67,18 @@ class Utils(Cog):
         await ctx.respond(embed=embed)
 
     @slash_command(name="embwebhook", description="Sends an embed with a webhook.")
+    @option(name="webhook_url", description="The webhook URL to use", type=str, required=True)
+    @option(name="wdescription", description="The embed's description", type=str, required=True)
+    @option(name="wtitle", description="The embed's title", type=str, required=True)
     async def embwebhook(
         self,
         ctx: ApplicationContext,
-        webhook: Option(str),
-        wdescription: Option(str, description="The embed's description", required=True),
-        wtitle: Option(str="** **", description="The embed's title", required=True),
+        webhook_url: str,
+        wdescription: str,
+        wtitle: str="** **",
     ):
         async with ClientSession() as session:
-            webhook = Webhook.from_url(f"{webhook}", session=session)
+            webhook = Webhook.from_url(f"{webhook_url}", session=session) 
             e = Embed(title=f"{wtitle}", description=f"{wdescription}", color=0xffffff)
 
             await webhook.send(embed=e)
@@ -123,21 +132,22 @@ class Utils(Cog):
         await ctx.respond(embed=embed)
 
     @slash_command(name="send", description="Make the bot say anything you want")
+    @option(name="messagecontent", description="What the bot should say", type=str, required=True)
     async def send(
         self,
         ctx: ApplicationContext,
-        messagecontent: Option(
-            str, description="What the bot should say", required=True
-        ),
+        messagecontent: str,
     ):
         await ctx.respond(f"{messagecontent}")
 
     @slash_command(name="embed", description="Customize your embed")
+    @option(name="edescription", description="The embed's description", type=str, required=True)
+    @option(name="etitle", description="The embed's title", type=str, required=True)
     async def embed(
         self,
         ctx: ApplicationContext,
-        edescription: Option(str, description="The embed's description", required=True),
-        etitle: Option(str="** **", description="The embed's title", required=True),
+        edescription: str,
+        etitle: str,
     ):
         embed = Embed(title=f"{etitle}", description=f"{edescription}", color=0xffffff)
         await ctx.respond(embed=embed)
@@ -185,27 +195,30 @@ class Utils(Cog):
         )
 
     @slash_command(name="msgwebhook", description="Sends a message with a webhook.")
+    @option(name="webhook_url", description="The webhook URL to use", type=str, required=True)
+    @option(name="msgcontent", description="What the webhook should say", type=str, required=True)
     async def msgwebhook(
         self,
         ctx: ApplicationContext,
-        webhook: Option(str),
-        msgcontent: Option(str, description="What the bot should say", required=True),
+        webhook_url: str,
+        msgcontent: str,
     ):
         async with ClientSession() as session:
-            webhook = Webhook.from_url(f"{webhook}", session=session)
+            webhook = Webhook.from_url(f"{webhook_url}", session=session)
             await webhook.send(f"{msgcontent}")
             await ctx.respond("Message sent with webhook!")
 
     @slash_command(name="avatar", description="Sends the avatar of a user")
+    @option(name="member", description="Member to get the avatar from", type=Member, required=False)
     async def avatar(
-        self, ctx: ApplicationContext, member: Option(Member, required=False)
+        self, ctx: ApplicationContext, member: str
     ):
         if not member:
-            authoravatar = ctx.author.avatar.url
+            authoravatar = ctx.author.avatar.url #type: ignore
             embed = Embed(color=0xffffff)
             embed.set_image(url=authoravatar)
         else:
-            useravatar = member.avatar.url
+            useravatar = member.avatar.url #type: ignore
             embed = Embed(color=0xffffff)
             embed.set_image(url=useravatar)
         await ctx.respond(embed=embed)
