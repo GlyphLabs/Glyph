@@ -71,5 +71,5 @@ async def poll(ctx, question: Option(str), a: Option(str), b: Option(str)):
 
 
 bot.load_extension("jishaku")
-bot.loop.create_task(bot.init_db())
+bot.loop.run_until_complete(bot.init_db())
 bot.run(environ.get("TOKEN"))
