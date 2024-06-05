@@ -162,7 +162,7 @@ class AiModeration(Cog):
         if not message.content:
             return
 
-        guild_settings = await self.bot.db.get_guild_settings(message.guild.id)
+        guild_settings = await self.bot.db.get_guild_settings(message.guild.id, auto_insert=False)
         if not guild_settings or not guild_settings.ai_reports_channel:
             return
 
@@ -182,7 +182,6 @@ class AiModeration(Cog):
             _score = await loop.run_in_executor(
                 None, lambda: model.predict(content, k=6)
             )
-            logger.info(_score)
 
             score = {
                 label.replace("__label__", ""): score
