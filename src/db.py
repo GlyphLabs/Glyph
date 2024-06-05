@@ -1,8 +1,8 @@
 from __future__ import annotations
 from cachetools import LFUCache
-from msgpack import packb, unpackb # type: ignore
+from msgpack import packb, unpackb  # type: ignore
 from typing import Optional
-from asyncpg import Pool # type: ignore
+from asyncpg import Pool  # type: ignore
 from datetime import datetime
 
 
@@ -41,6 +41,13 @@ class Database:
             )
             return Warn(user_id, reason, timestamp, guild)
 
+    async def delete_warns(self, user_id: int, guild: int) -> None:
+        async with self.pool.acquire() as conn:
+            await conn.execute(
+                "DELETE FROM warns WHERE user = ? AND guild = ?",
+                (user_id, guild),
+            )
+
     async def get_warns(self, user_id: int, guild: int) -> list[Warn]:
         async with self.pool.acquire() as conn:
             data = await conn.fetch(
@@ -52,7 +59,9 @@ class Database:
                 Warn.from_data(packb({k: v for k, v in warn.items()})) for warn in data
             ]
 
-    async def get_guild_settings(self, guild_id: int, auto_insert: bool = True) -> Optional[GuildSettings]:
+    async def get_guild_settings(
+        self, guild_id: int, auto_insert: bool = True
+    ) -> Optional[GuildSettings]:
         if guild_id in self.__cache:
             return GuildSettings.from_data(self.__cache[guild_id])
         async with self.pool.acquire() as conn:
@@ -85,7 +94,7 @@ class Database:
                     settings.leveling_enabled,
                 )
                 self.__cache[guild_id] = settings.serialize()
-    
+
     async def get_xp(self, user_id: int) -> int:
         async with self.pool.acquire() as conn:
             async with conn.transaction():
@@ -93,7 +102,7 @@ class Database:
                     "SELECT xp FROM leveling WHERE user_id = $1", user_id
                 )
                 return data["xp"] if data else 0
-    
+
     async def add_xp(self, user_id: int, xp: int) -> int:
         async with self.pool.acquire() as conn:
             async with conn.transaction():
@@ -150,13 +159,13 @@ class Warn(MsgPackMixin):
     def __repr__(self):
         return f"<Warn(user_id={self.user_id}, reason={self.reason}, time={self.time}, guild={self.guild})>"
 
+
 class Leveling(MsgPackMixin):
     __slots__ = ("user_id", "xp")
 
     def __init__(self, user_id: int, xp: int):
         self.user_id: int = user_id
         self.xp: int = xp
-
 
     def __repr__(self):
         return f"<Leveling(user_id={self.user_id}, xp={self.xp})>"
