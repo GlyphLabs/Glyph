@@ -172,6 +172,10 @@ class Utils(Cog):
                 value=", ".join(f"`{c.name}`" for c in cog.get_commands()),
                 inline=False,
             )
+        
+        # if this is an admin who hasn't set up their server yet...
+        if ctx.author.guild_permissions.manage_guild and not await self.bot.db.get_guild_settings(ctx.guild.id, auto_insert=False): # type: ignore
+            embed.description = "**Hey, I noticed you haven't set up your server yet! Use `/setup` to get started!**"
         await ctx.respond(embed=embed)
 
     @slash_command(name="secret", description="Try it out for yourself")
