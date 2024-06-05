@@ -52,7 +52,7 @@ class Database:
                 Warn.from_data(packb({k: v for k, v in warn.items()})) for warn in data
             ]
 
-    async def get_guild_settings(self, guild_id: int) -> GuildSettings:
+    async def get_guild_settings(self, guild_id: int, auto_insert: bool = True) -> Optional[GuildSettings]:
         if guild_id in self.__cache:
             return GuildSettings.from_data(self.__cache[guild_id])
         async with self.pool.acquire() as conn:
@@ -63,10 +63,12 @@ class Database:
                 self.__cache[guild_id] = packb({k: v for k, v in data.items()})
                 return GuildSettings(**{k: v for k, v in data.items()})
             else:
-                await conn.execute(
-                    "INSERT INTO guild_config (guild_id) VALUES ($1)", guild_id
-                )
-                return GuildSettings(guild_id)
+                if auto_insert:
+                    await conn.execute(
+                        "INSERT INTO guild_config (guild_id) VALUES ($1)", guild_id
+                    )
+                    return GuildSettings(guild_id)
+                return None
 
     async def set_guild_settings(self, guild_id: int, settings: GuildSettings) -> None:
         async with self.pool.acquire() as conn:
