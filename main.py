@@ -1,6 +1,5 @@
 from discord.embeds import Embed
 from discord.colour import Colour
-from discord.commands.options import Option
 from discord.ext.commands import MissingPermissions, Context
 from discord.message import Message
 from src.bot import Glyph
@@ -48,26 +47,6 @@ async def on_message(message: Message):
         )
         await message.channel.send(embed=embed)
     await bot.process_commands(message)
-
-
-"""            
-@bot.slash_command()
-async def search(ctx, *, query):
-    urls = [url for url in search(query, num_results=3)]
-    message = "Search results:\n"
-    for i in range(len(urls)):
-        message += f"{i+1}. {urls[i]}\n"
-    await ctx.respond(message)
-"""
-
-
-@bot.slash_command(name="poll", description="Creates a poll")
-async def poll(ctx, question: Option(str), a: Option(str), b: Option(str)):
-    embed = Embed(title=question, description=f"🅰️: {a}\n🅱️: {b}")
-    await ctx.respond(embed=embed)
-    msg = await ctx.interaction.original_response()
-    await msg.add_reaction("🅰️")
-    await msg.add_reaction("🅱️")
 
 
 bot.load_extension("jishaku")
