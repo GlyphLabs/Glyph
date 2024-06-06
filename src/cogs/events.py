@@ -27,7 +27,7 @@ class Events(Cog):
         try:
             await event.user.send(embed=embed)
         except HTTPException as e:
-            if e.code == 403:
+            if e.code == 50007:
                 return # idc about forbidden, that just means dms are private
             logging.error(f"Failed to send welcome message to {event.user}")
             logging.error(e)
