@@ -1,7 +1,7 @@
 import logging
 import coloredlogs
 from asyncio import sleep
-from typing import Optional, List, Tuple
+from typing import Optional
 
 from asyncpg import create_pool, Pool
 from discord import Intents, Game, MemberCacheFlags, HTTPException, Thread
@@ -33,57 +33,39 @@ logger = logging.getLogger("discord.py")
 
 class Glyph(Bot):
     __slots__ = (
-        "reaction_roles",
         "pool",
         "database_url",
         "db",
-        "scanned_messages_count",
     )
 
     def __init__(
         self, database_url: Optional[str] = None, test_mode: Optional[bool] = False
     ):
-        intents = Intents.none()
-        intents.guilds = True
-        intents.message_content = True
-        intents.guild_messages = True
-
         self.db: Database
-        self.reaction_roles: List[Tuple[int, int, int]] = []
         self.database_url = database_url
-        self.scanned_messages_count: int = 0
-
-        member_cache_flags = MemberCacheFlags.none()
 
         super().__init__(
             command_prefix=when_mentioned,
-            intents=intents,
+            intents=Intents(guilds=True, message_content=True, guild_messages=True),
             debug_guilds=[1247673555462787143] if test_mode else None,
-            member_cache_flags=member_cache_flags,
+            member_cache_flags=MemberCacheFlags.none(),
             max_messages=None,
             chunk_guilds_at_startup=False,
         )
 
-        logger.info("Bot initialized")
-
-        self.load_all_cogs(
-            ["fun", "moderation", "utils", "ai", "config", "error", "events"]
-        )
-
-    def load_all_cogs(self, cogs: List[str]):
-        """Load all specified cogs."""
-        for cog in cogs:
+        logger.info("bot initialized")
+        for cog in ("fun", "moderation", "utils", "ai", "config", "error", "events"):
             try:
                 self.load_extension(f"src.cogs.{cog}")
-                logger.info(f"Loaded cog: {cog}")
+                logger.info(f"loaded {cog.replace('src.cogs.', '')} cog")
             except Exception as e:
-                logger.error(f"Failed to load cog {cog}: {e}")
+                logger.error(f"failed to load {cog.replace('src.cogs.', '')} cog: {e}")
 
     async def on_ready(self):
         """Runs when the bot is completely connected."""
-        logger.info("Glyph is online!")
-        logger.info(f"Logged in as {self.user}")
-        logger.info(f"Connected to {len(self.guilds)} guilds")
+        logger.info("glyph is online!")
+        logger.info(f"logged in as {self.user}")
+        logger.info(f"connected to {len(self.guilds)} guilds")
         logger.info(f"{len(self.all_commands)} commands across {len(self.cogs)} cogs")
 
         await self.change_presence(activity=Game("/info"))
@@ -101,23 +83,23 @@ class Glyph(Bot):
 
     async def init_db(self):
         """Initialize the database."""
-        retry = 1
-        max_retries = 3
 
-        while retry <= max_retries:
+        logger.info("connecting to database...")
+
+        for i in range(3):
             try:
-                self.pool: Pool = await create_pool(self.database_url)
+                self.pool: Pool = await create_pool(self.database_url) # type: ignore
                 break
             except Exception as e:
-                if retry >= max_retries:
-                    logger.error(f"Database connection error: {e}. Exiting.")
-                    await self.wait_until_ready()
-                    await self.close()
-                    raise e
-                retry += 1
-                logger.error(f"Database connection error: {e}. Retrying in 3 seconds.")
+                if i == 2:
+                    logger.error(f"database connection error: {e}. exiting.")
+                    continue
+                logger.error(f"database connection error: {e}. retrying in 3 seconds.")
                 await sleep(3)
-
+        else:
+            exit(1)
+            
+        logger.info("connected to database, validating tables...")
         async with self.pool.acquire() as conn:
             async with conn.transaction():
                 await conn.execute("""
@@ -142,5 +124,5 @@ class Glyph(Bot):
                         leveling_enabled BOOLEAN DEFAULT FALSE
                     )
                 """)
-        logger.info("Database initialized")
         self.db = Database(self.pool)
+        logger.info("database initialized")
