@@ -208,7 +208,7 @@ class AiModeration(Cog):
                         color=0xFFFFFF,
                     )
                     .set_author(
-                        name=f"{str(author).replace('#0','')} ({author.id})",
+                        name=f"{str(author).replace('#0','')}",
                         icon_url=author.display_avatar.url,
                     )
                     .set_footer(
