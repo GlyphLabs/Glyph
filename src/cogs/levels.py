@@ -1,11 +1,11 @@
 from discord.ext.commands import Cog, slash_command, Context
 from discord import Message, Embed
-from src.bot import PurpBot
+from src.bot import Glyph
 from random import randint
 
 
 class Levels(Cog):
-    def __init__(self, bot: PurpBot):
+    def __init__(self, bot: Glyph):
         self.bot = bot
 
     @Cog.listener()
