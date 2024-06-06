@@ -172,54 +172,53 @@ class AiModeration(Cog):
         if not msg.guild:
             return
         
-        content = msg.content
+        content = msg.content.replace("\n", " ")
         message_id = msg.id
         try:
             loop = get_running_loop()
             model = await loop.run_in_executor(
                 None, lambda: load_model("src/cogs/model.bin")
             )
+            
+            _score = await loop.run_in_executor(
+                None, lambda: model.predict(content, k=6)
+            )
 
-            for line in content.splitlines():
-                _score = await loop.run_in_executor(
-                    None, lambda: model.predict(line, k=6)
+            score = {
+                label.replace("__label__", ""): score
+                for label, score in zip(_score[0], _score[1])
+            }
+            logger.debug(f"message {message_id} has probability: {score}")
+            if score.get("non_toxic", 0) < 0.65:
+                guild = await self.bot.fetch_guild(msg.guild.id)
+                author = await guild.fetch_member(msg.author.id)
+                reports_channel: TextChannel = await self.bot.getch_channel(reports_channel_id) # type: ignore
+                embed = (
+                    Embed(
+                        title="Message Flagged",
+                        description=f"Highest score was **{next(iter(score.keys()))}** with a percentage of **{round(next(iter(score.values()))*100)}%**.\n"
+                        + "\n".join(
+                            f"`{f}`: **{round(s*100)}%**"
+                            for f, s in list(i for i in score.items())[1:4]
+                        ),
+                        color=0xffffff,
+                    )
+                    .set_author(
+                        name=f"{str(author).replace('#0','')} ({author.id})",
+                        icon_url=author.display_avatar.url,
+                    )
+                    .set_footer(
+                        text=f"Message ID: {message_id} • Author ID: {author.id}"
+                    )
+                    .add_field(
+                        name="Message Content",
+                        value=f'||{content[:100]}{("..." if len(content) > 100 else "")}||',
+                    )
                 )
-
-                score = {
-                    label.replace("__label__", ""): score
-                    for label, score in zip(_score[0], _score[1])
-                }
-                logger.debug(f"message {message_id} has probability: {score}")
-                if score.get("non_toxic", 0) < 0.65:
-                    guild = await self.bot.fetch_guild(msg.guild.id)
-                    author = await guild.fetch_member(msg.author.id)
-                    reports_channel: TextChannel = await self.bot.getch_channel(reports_channel_id) # type: ignore
-                    embed = (
-                        Embed(
-                            title="Message Flagged",
-                            description=f"Highest score was **{next(iter(score.keys()))}** with a percentage of **{round(next(iter(score.values()))*100)}%**.\n"
-                            + "\n".join(
-                                f"`{f}`: **{round(s*100)}%**"
-                                for f, s in list(i for i in score.items())[1:4]
-                            ),
-                            color=0xffffff,
-                        )
-                        .set_author(
-                            name=f"{str(author).replace('#0','')} ({author.id})",
-                            icon_url=author.display_avatar.url,
-                        )
-                        .set_footer(
-                            text=f"Message ID: {message_id} • Author ID: {author.id}"
-                        )
-                        .add_field(
-                            name="Message Content",
-                            value=f'||{content[:100]}{("..." if len(content) > 100 else "")}||',
-                        )
-                    )
-                    await reports_channel.send(
-                        embed=embed,
-                        view=self.build_view(AiPartialMessage.from_message(msg)),
-                    )
+                await reports_channel.send(
+                    embed=embed,
+                    view=self.build_view(AiPartialMessage.from_message(msg)),
+                )
         except Exception as e:  # don't die if you fail once
             logger.error(f"error while scanning message {message_id}: {e}")
 
