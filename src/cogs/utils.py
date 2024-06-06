@@ -2,15 +2,13 @@ from src.bot import Glyph
 from discord.ext.commands import slash_command, Cog
 from discord import (
     Embed,
-    Option,
     ApplicationContext,
     Webhook,
     Member,
 )
 from src.views import VoteButtons
 from aiohttp import ClientSession
-from discord.commands import SlashCommandGroup, option
-from discord import Embed, ApplicationContext, Member, Colour, Role
+from discord.commands import option
 
 
 class Utils(Cog):
@@ -75,7 +73,7 @@ class Utils(Cog):
         ctx: ApplicationContext,
         webhook_url: str,
         wdescription: str,
-        wtitle: str="** **",
+        wtitle: str,
     ):
         async with ClientSession() as session:
             webhook = Webhook.from_url(f"{webhook_url}", session=session) 
