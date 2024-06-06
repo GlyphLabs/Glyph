@@ -1,3 +1,4 @@
+import logging
 from discord.commands import SlashCommandGroup, option
 from src.bot import Glyph
 from discord.ext.commands import (
@@ -9,8 +10,9 @@ from discord.ext.commands import (
 )
 from discord import Embed, ApplicationContext, Member, Colour, Role
 from discord.ext.commands.errors import MissingPermissions, CommandOnCooldown
-from datetime import timedelta
-from humanize import naturaldelta # type: ignore
+from datetime import timedelta, datetime
+from humanize import naturaldelta  # type: ignore
+from typing import Optional
 
 
 class Moderation(Cog):
@@ -22,8 +24,18 @@ class Moderation(Cog):
 
     @slash_command(name="kick", description="Kicks a member | /kick [member]")
     @has_permissions(kick_members=True)
-    @option(name="member", description="The member you want to kick", type=Member, required=True)
-    @option(name="reason", description="The reason to kick the member", type=str, required=True)
+    @option(
+        name="member",
+        description="The member you want to kick",
+        type=Member,
+        required=True,
+    )
+    @option(
+        name="reason",
+        description="The reason to kick the member",
+        type=str,
+        required=True,
+    )
     async def kick(
         self,
         ctx: ApplicationContext,
@@ -80,8 +92,18 @@ class Moderation(Cog):
 
     @slash_command(name="ban", description="Bans a member | /ban [member]")
     @has_permissions(ban_members=True)
-    @option(name="member", description="The member you want to ban", type=Member, required=True)
-    @option(name="reason", description="The reason to ban the member", type=str, required=True)
+    @option(
+        name="member",
+        description="The member you want to ban",
+        type=Member,
+        required=True,
+    )
+    @option(
+        name="reason",
+        description="The reason to ban the member",
+        type=str,
+        required=True,
+    )
     async def ban(
         self,
         ctx: ApplicationContext,
@@ -138,8 +160,18 @@ class Moderation(Cog):
 
     @slash_command(name="warn", description="Warns someone | /warn [member] <reason>")
     @has_permissions(manage_messages=True)
-    @option(name="member", description="The member you want to warn", type=Member, required=True)
-    @option(name="reason", description="The reason to warn the member", type=str, required=True)
+    @option(
+        name="member",
+        description="The member you want to warn",
+        type=Member,
+        required=True,
+    )
+    @option(
+        name="reason",
+        description="The reason to warn the member",
+        type=str,
+        required=True,
+    )
     async def warn(
         self,
         ctx: ApplicationContext,
@@ -161,7 +193,12 @@ class Moderation(Cog):
         name="unwarn", description="Delete all of someone's warn(s) | /unwarn [member]"
     )
     @has_permissions(manage_guild=True)
-    @option(name="member", description="The member you want to remove warns from", type=Member, required=True)
+    @option(
+        name="member",
+        description="The member you want to remove warns from",
+        type=Member,
+        required=True,
+    )
     async def unwarn(
         self,
         ctx: ApplicationContext,
@@ -181,7 +218,12 @@ class Moderation(Cog):
     @slash_command(
         name="warns", description="Shows someone's warnings | /warrns [member]"
     )
-    @option(name="member", description="The member you want to remove warns from", type=Member, required=True)
+    @option(
+        name="member",
+        description="The member you want to remove warns from",
+        type=Member,
+        required=True,
+    )
     async def warns(
         self,
         ctx: ApplicationContext,
@@ -190,7 +232,7 @@ class Moderation(Cog):
         rows = await self.bot.db.get_warns(member.id, ctx.guild.id)
         if rows:
             rows.sort(key=lambda x: x.time, reverse=True)
-            embed = Embed(colour=0xffffff, title=f"Warnings for {member.name}")
+            embed = Embed(colour=0xFFFFFF, title=f"Warnings for {member.name}")
             warnnum = 0
             for row in rows:
                 warnnum += 1
@@ -200,18 +242,23 @@ class Moderation(Cog):
                 )
             await ctx.respond(embed=embed)
         else:
-            embed = Embed(colour=0xffffff, title=f"No warnings for {member.name}")
+            embed = Embed(colour=0xFFFFFF, title=f"No warnings for {member.name}")
             await ctx.respond(embed=embed)
 
     @slash_command(name="timeout", description="Puts a member in timeout")
-    @option(name="member", description="The member you want to time out", type=Member, required=True)
-    @option(name="time", description="The period of time to time the user out for. Expressed as 1d, 5, etc.", type=str, required=True)
-    async def timeout(
-        self,
-        ctx: ApplicationContext,
-        member: Member,
-        time: str
-    ):
+    @option(
+        name="member",
+        description="The member you want to time out",
+        type=Member,
+        required=True,
+    )
+    @option(
+        name="time",
+        description="The period of time to time the user out for. Expressed as 1d, 5, etc.",
+        type=str,
+        required=True,
+    )
+    async def timeout(self, ctx: ApplicationContext, member: Member, time: str):
         """Apply a timeout to a member"""
         time_units = {
             "s": 1,  # seconds
@@ -233,15 +280,16 @@ class Moderation(Cog):
     @slash_command(name="purge", description="Delete a certain amount of messages")
     @has_permissions(manage_messages=True)
     @cooldown(1, 5, BucketType.user)
-    @option(name="messages", description="The amount of messages you want to delete", type=int, required=True)
-    async def purge(
-        self,
-        ctx: ApplicationContext,
-        messages: int
-    ):
+    @option(
+        name="messages",
+        description="The amount of messages you want to delete",
+        type=int,
+        required=True,
+    )
+    async def purge(self, ctx: ApplicationContext, messages: int):
         await ctx.defer()
         m = await ctx.respond(f"Deleting {messages}...", ephemeral=True)
-        x = await ctx.channel.purge(limit=messages) # type: ignore
+        x = await ctx.channel.purge(limit=messages)  # type: ignore
         await m.edit(content=f"Deleted {len(x)} messages")
 
     # error handler
@@ -267,8 +315,15 @@ class Moderation(Cog):
 
     @role.command(name="add", description="Gives a user a role")
     @has_permissions(manage_guild=True)
-    @option(name="role", description="The role to give the member", type=Role, required=True)
-    @option(name="member", description="The member you want to give the role to", type=Member, required=True)
+    @option(
+        name="role", description="The role to give the member", type=Role, required=True
+    )
+    @option(
+        name="member",
+        description="The member you want to give the role to",
+        type=Member,
+        required=True,
+    )
     async def addrole(
         self,
         ctx: ApplicationContext,
@@ -311,10 +366,17 @@ class Moderation(Cog):
             await ctx.respond(embed=em, ephemeral=True)
             raise error
 
-    @slash_command(name="remove", description="Removes a role from a user")
+    @role.command(name="remove", description="Removes a role from a user")
     @has_permissions(manage_guild=True)
-    @option(name="role", description="The role to give the member", type=Role, required=True)
-    @option(name="member", description="The member you want to give the role to", type=Member, required=True)
+    @option(
+        name="role", description="The role to give the member", type=Role, required=True
+    )
+    @option(
+        name="member",
+        description="The member you want to give the role to",
+        type=Member,
+        required=True,
+    )
     async def removerole(
         self,
         ctx: ApplicationContext,
@@ -357,6 +419,127 @@ class Moderation(Cog):
             )
             await ctx.respond(embed=em, ephemeral=True)
             raise error
+
+    def group_audit_events(self, audit_events: list[str]) -> dict[str, list[str]]:
+        grouped_events: dict[str, list[str]] = {
+            "bot": [],
+            "integration": [],
+            "user": [],
+            "moderation": [],
+            "channel": [],
+            "roles": [],
+            "messages": [],
+            "invites": [],
+        }
+
+        for event in audit_events:
+            if "bot" in event:
+                grouped_events["bot"].append(event)
+            elif "integration" in event:
+                grouped_events["integration"].append(event)
+            elif "kick" in event:
+                grouped_events["moderation"].append(event)
+            elif "ban" in event:
+                grouped_events["moderation"].append(event)
+            elif "member" in event:
+                grouped_events["user"].append(event)
+            elif "channel" in event:
+                grouped_events["channel"].append(event)
+            elif "role" in event:
+                grouped_events["roles"].append(event)
+            elif "message" in event:
+                grouped_events["messages"].append(event)
+            elif "invite" in event:
+                grouped_events["invites"].append(event)
+
+        return grouped_events
+
+    @slash_command(name="report", description="Get an audit log report")
+    @has_permissions(view_audit_log=True)
+    @option(
+        name="days",
+        description="The amount of days to look back",
+        type=int,
+        required=False,
+        default=7,
+    )
+    @option(
+        name="category",
+        description="The category to filter by",
+        type=str,
+        required=False,
+        choices=[
+            "bot",
+            "integration",
+            "user",
+            "moderation",
+            "channel",
+            "roles",
+            "messages",
+            "invites",
+        ],
+    )
+    async def report(
+        self, ctx: ApplicationContext, days: int, category: Optional[str] = None
+    ):
+        if not ctx.guild or not self.bot.user:  # i hate you mypy!!
+            return
+
+        await ctx.defer()
+
+        after = datetime.now() - timedelta(days=days)
+        embed = Embed(
+            title=f"Audit logs for {ctx.guild.name}",
+            colour=0xFFFFFF,
+            timestamp=datetime.now(),
+        )
+        embed.set_footer(
+            text=f"Events from {after.strftime('%Y-%m-%d')} to now ({days} days)",
+            icon_url=ctx.guild.icon.url if ctx.guild.icon else None,
+        )
+        embed.set_author(
+            name=f"Audit Log Report{': {} events'.format(category) if category else ''}",
+            icon_url=self.bot.user.display_avatar.url,
+        )
+
+        events = await ctx.guild.audit_logs(after=after).flatten()
+        event_counts: dict[str, int] = {}
+        for event in events:
+            event_counts[event.action.name] = event_counts.get(event.action.name, 0) + 1
+
+        if category:
+            events = set(
+                [
+                    event
+                    for event in self.group_audit_events(
+                        [event.action.name for event in events]
+                    )[category]
+                ]
+            )
+            embed.description = "\n".join(
+                f"`{event.replace('_', ' ')}` events: {event_counts[event]}"
+                for event in events
+            )
+            return await ctx.respond(embed=embed)
+
+        for i, category in enumerate(
+            grouped_events := self.group_audit_events([i for i in event_counts.keys()])
+        ):
+            embed.add_field(
+                name=category.capitalize(),
+                value="\n".join(
+                    f"`{event.replace('_', ' ')}` events: {event_counts[event]}"
+                    for event in grouped_events[category]
+                ),
+                inline=True,
+            )
+            if i % 2 == 0 and i != len(grouped_events) - 1:
+                embed.add_field(
+                    name="\u200b",  # Zero-width space for an empty field
+                    value="\u200b",
+                    inline=True,
+                )
+        await ctx.respond(embed=embed)
 
 
 def setup(bot: Glyph):
