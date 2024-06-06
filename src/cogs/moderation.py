@@ -454,7 +454,9 @@ class Moderation(Cog):
 
         return grouped_events
 
-    @slash_command(name="report", description="Get an audit log report")
+    audit = SlashCommandGroup("audit", "Audit log utilities")
+
+    @audit.command(name="report", description="Get an audit log report")
     @has_permissions(view_audit_log=True)
     @option(
         name="days",
@@ -540,7 +542,6 @@ class Moderation(Cog):
                     inline=True,
                 )
         await ctx.respond(embed=embed)
-
 
 def setup(bot: Glyph):
     bot.add_cog(Moderation(bot))
