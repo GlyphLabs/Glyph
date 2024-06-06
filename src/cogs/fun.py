@@ -9,7 +9,12 @@ class Fun(Cog):
         self.bot = bot
 
     @slash_command(name="hug", description="Hug someone | /hug [member]")
-    @option(name="member", description="The member you want to kick", type=Member, required=True)
+    @option(
+        name="member",
+        description="The member you want to kick",
+        type=Member,
+        required=True,
+    )
     async def hug(
         self,
         ctx: ApplicationContext,

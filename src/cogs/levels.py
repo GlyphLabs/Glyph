@@ -18,7 +18,9 @@ class Levels(Cog):
         if not guild_settings.level_system:
             return
 
-        level_stats = await self.bot.db.get_level_stats(message.author.id, message.guild.id)
+        level_stats = await self.bot.db.get_level_stats(
+            message.author.id, message.guild.id
+        )
         new_xp = randint(5, 10)
 
         if level_stats.xp + new_xp >= level_stats.level * 100:

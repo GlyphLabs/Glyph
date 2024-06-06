@@ -15,18 +15,18 @@ coloredlogs.install(
     fmt="[%(levelname)s] %(asctime)s: %(message)s",
     level="INFO",
     level_styles={
-        'critical': {'color': 'red', 'bold': True},
-        'error': {'color': 'red'},
-        'warning': {'color': 'yellow'},
-        'notice': {'color': 'magenta'},
-        'info': {'color': 'green'},
-        'debug': {'color': 'blue'},
+        "critical": {"color": "red", "bold": True},
+        "error": {"color": "red"},
+        "warning": {"color": "yellow"},
+        "notice": {"color": "magenta"},
+        "info": {"color": "green"},
+        "debug": {"color": "blue"},
     },
     field_styles={
-        'asctime': {'color': 'cyan'},
-        'levelname': {'color': 'black', 'bold': True},
-        'message': {'color': 'white'},
-    }
+        "asctime": {"color": "cyan"},
+        "levelname": {"color": "black", "bold": True},
+        "message": {"color": "white"},
+    },
 )
 logger = logging.getLogger("discord.py")
 
@@ -40,7 +40,9 @@ class Glyph(Bot):
         "scanned_messages_count",
     )
 
-    def __init__(self, database_url: Optional[str] = None, test_mode: Optional[bool] = False):
+    def __init__(
+        self, database_url: Optional[str] = None, test_mode: Optional[bool] = False
+    ):
         intents = Intents.none()
         intents.guilds = True
         intents.message_content = True
@@ -64,7 +66,9 @@ class Glyph(Bot):
 
         logger.info("Bot initialized")
 
-        self.load_all_cogs(["fun", "moderation", "utils", "ai", "config", "error", "events"])    
+        self.load_all_cogs(
+            ["fun", "moderation", "utils", "ai", "config", "error", "events"]
+        )
 
     def load_all_cogs(self, cogs: List[str]):
         """Load all specified cogs."""
@@ -84,7 +88,9 @@ class Glyph(Bot):
 
         await self.change_presence(activity=Game("/info"))
 
-    async def getch_channel(self, channel_id: int) -> Optional[GuildChannel | PrivateChannel | Thread]:
+    async def getch_channel(
+        self, channel_id: int
+    ) -> Optional[GuildChannel | PrivateChannel | Thread]:
         """Fetch a channel from cache or API."""
         if channel := self.get_channel(channel_id):
             return channel

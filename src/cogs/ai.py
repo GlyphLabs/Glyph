@@ -8,7 +8,7 @@ from typing import Optional
 from datetime import timedelta
 from logging import getLogger
 from dataclasses import dataclass
-from fasttext import load_model # type: ignore
+from fasttext import load_model  # type: ignore
 from asyncio import get_running_loop
 
 
@@ -118,12 +118,12 @@ class AiModeration(Cog):
         cleaned_id = interaction.custom_id.split(":")[1]
         action, msg_channel_id, msg_id = cleaned_id.split("-")
         channel = await self.bot.getch_channel(int(msg_channel_id))
-        message = await channel.fetch_message(int(msg_id)) # type: ignore
-        
+        message = await channel.fetch_message(int(msg_id))  # type: ignore
+
         # appease linter
         if not message.guild:
             return
-        
+
         if action == "delete":
             await message.delete()
             await interaction.response.send_message("Message deleted.", ephemeral=True)
@@ -137,7 +137,7 @@ class AiModeration(Cog):
         elif action == "kick":
             await message.delete()
             await message.guild.kick(
-                message.author.id, # type: ignore
+                message.author.id,  # type: ignore
                 f"Flagged message by AI moderation. Kicked by {interaction.user}.",
             )
             await interaction.response.send_message(
@@ -145,7 +145,7 @@ class AiModeration(Cog):
             )
         elif action == "ban":
             await message.delete()
-            await message.guild.ban(message.author.id) # type: ignore
+            await message.guild.ban(message.author.id)  # type: ignore
             await interaction.response.send_message(
                 f"{message.author} has been banned.", ephemeral=True
             )
@@ -162,7 +162,9 @@ class AiModeration(Cog):
         if not message.content:
             return
 
-        guild_settings = await self.bot.db.get_guild_settings(message.guild.id, auto_insert=False)
+        guild_settings = await self.bot.db.get_guild_settings(
+            message.guild.id, auto_insert=False
+        )
         if not guild_settings or not guild_settings.ai_reports_channel:
             return
 
@@ -171,7 +173,7 @@ class AiModeration(Cog):
     async def scan_message(self, msg: Message, reports_channel_id: int):
         if not msg.guild:
             return
-        
+
         content = msg.content.replace("\n", " ")
         message_id = msg.id
         try:
@@ -179,7 +181,7 @@ class AiModeration(Cog):
             model = await loop.run_in_executor(
                 None, lambda: load_model("src/cogs/model.bin")
             )
-            
+
             _score = await loop.run_in_executor(
                 None, lambda: model.predict(content, k=6)
             )
@@ -192,7 +194,9 @@ class AiModeration(Cog):
             if score.get("non_toxic", 0) < 0.65:
                 guild = await self.bot.fetch_guild(msg.guild.id)
                 author = await guild.fetch_member(msg.author.id)
-                reports_channel: TextChannel = await self.bot.getch_channel(reports_channel_id) # type: ignore
+                reports_channel: TextChannel = await self.bot.getch_channel(
+                    reports_channel_id
+                )  # type: ignore
                 embed = (
                     Embed(
                         title="Message Flagged",
@@ -201,7 +205,7 @@ class AiModeration(Cog):
                             f"`{f}`: **{round(s*100)}%**"
                             for f, s in list(i for i in score.items())[1:4]
                         ),
-                        color=0xffffff,
+                        color=0xFFFFFF,
                     )
                     .set_author(
                         name=f"{str(author).replace('#0','')} ({author.id})",

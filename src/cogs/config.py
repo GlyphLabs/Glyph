@@ -167,14 +167,19 @@ class Config(Cog):
         name="setup",
         description="Setup the bot for your server.",
     )
-    @option("hidden", type=bool, description="Whether or not to hide the output of this command.", default=False)
+    @option(
+        "hidden",
+        type=bool,
+        description="Whether or not to hide the output of this command.",
+        default=False,
+    )
     async def setup(self, ctx: ApplicationContext, hidden: bool):
         if not ctx.guild:
             return
 
         # meet the linter - kendrick lamar
         if not ctx.bot.user or not ctx.bot.user.display_avatar:
-            return 
+            return
 
         m = await ctx.respond(
             embed=Embed(
@@ -191,11 +196,13 @@ class Config(Cog):
             embed=Embed(
                 description="Firstly, would you like to enable the level system?",
                 color=0xFFFFFF,
-            ).set_author(name="Glyph Setup", icon_url=ctx.bot.user.display_avatar.url).set_footer(text="Please reply with `yes` or `no`."),
-            view=level_view
+            )
+            .set_author(name="Glyph Setup", icon_url=ctx.bot.user.display_avatar.url)
+            .set_footer(text="Please reply with `yes` or `no`."),
+            view=level_view,
         )
         await level_view.wait()
-        
+
         if level_view.value is None:
             # if we reach here and there's still no value, it timed out
             level_view.disable_all_items()
@@ -203,8 +210,10 @@ class Config(Cog):
                 embed=Embed(
                     description="You didn't respond in time. Setup stopped.",
                     color=0xFF0000,
-                ).set_author(name="Glyph Setup", icon_url=ctx.bot.user.display_avatar.url),
-                view=level_view
+                ).set_author(
+                    name="Glyph Setup", icon_url=ctx.bot.user.display_avatar.url
+                ),
+                view=level_view,
             )
 
         if level_view.value:
@@ -217,8 +226,10 @@ class Config(Cog):
             embed=Embed(
                 description="Next, would you like to enable AI moderation?\n\nIf so, please select a channel where reports will be sent. Otherwise, select `Cancel` and we can move on to the next step!",
                 color=0xFFFFFF,
-            ).set_author(name="Glyph Setup", icon_url=ctx.bot.user.display_avatar.url).set_footer(text="Please select a channel."),
-            view=ai_view
+            )
+            .set_author(name="Glyph Setup", icon_url=ctx.bot.user.display_avatar.url)
+            .set_footer(text="Please select a channel."),
+            view=ai_view,
         )
 
         await ai_view.wait()
@@ -229,10 +240,12 @@ class Config(Cog):
                 embed=Embed(
                     description="You didn't respond in time. Setup stopped.",
                     color=0xFF0000,
-                ).set_author(name="Glyph Setup", icon_url=ctx.bot.user.display_avatar.url),
-                view=ai_view
+                ).set_author(
+                    name="Glyph Setup", icon_url=ctx.bot.user.display_avatar.url
+                ),
+                view=ai_view,
             )
-        
+
         if ai_view.value == "cancel":
             guild_settings.ai_reports_channel = None
         else:
@@ -247,10 +260,13 @@ class Config(Cog):
             embed=Embed(
                 description="Setup complete! Your server is now configured.",
                 color=0x6B74C7,
-            ).set_author(name="Glyph Setup", icon_url=ctx.bot.user.display_avatar.url).set_footer(text="If you ever want to change something in the future, you can use the `/config` command or run this command again!"),
-            view=None
+            )
+            .set_author(name="Glyph Setup", icon_url=ctx.bot.user.display_avatar.url)
+            .set_footer(
+                text="If you ever want to change something in the future, you can use the `/config` command or run this command again!"
+            ),
+            view=None,
         )
-
 
     async def cog_command_error(
         self, ctx: ApplicationContext, error: Exception

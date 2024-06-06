@@ -22,11 +22,9 @@ async def on_command_error(ctx: Context, error: Exception):
     Args:
         ctx (Context): the information about the execution of the command
         error (Exception): the error itself
-    """    
+    """
     if isinstance(error, MissingPermissions):
-        embed = Embed(
-            description="Missing required permissions", color=Colour.red()
-        )
+        embed = Embed(description="Missing required permissions", color=Colour.red())
         embed.set_author(
             name="Error",
             icon_url="https://cdn.discordapp.com/emojis/1055805812511080499.webp?size=96&quality=lossless",
@@ -40,10 +38,10 @@ async def on_message(message: Message):
 
     Args:
         message (discord.Message): the message itself
-    """    
-    if message.content == bot.user.mention: # type: ignore
+    """
+    if message.content == bot.user.mention:  # type: ignore
         embed = Embed(
-            description="My default prefix is: `/` (Slash Commands)", color=0xffffff
+            description="My default prefix is: `/` (Slash Commands)", color=0xFFFFFF
         )
         await message.channel.send(embed=embed)
     await bot.process_commands(message)

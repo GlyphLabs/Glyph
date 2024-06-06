@@ -65,9 +65,10 @@ class TicketSettings(View):
         await interaction.channel.delete()  # type: ignore
         await interaction.user.send("Ticket closed.")
 
+
 class YesNo(View):
-    def __init__(self, timeout = 180):
-        super().__init__(timeout = timeout)
+    def __init__(self, timeout=180):
+        super().__init__(timeout=timeout)
         self.value = None
 
     @button(
@@ -92,9 +93,10 @@ class YesNo(View):
         self.disable_all_items()
         self.stop()
 
+
 class ChannelSelect(View):
-    def __init__(self, timeout = 180):
-        super().__init__(timeout = timeout)
+    def __init__(self, timeout=180):
+        super().__init__(timeout=timeout)
         self.value: Optional[TextChannel] = None
 
     @select(
@@ -102,10 +104,10 @@ class ChannelSelect(View):
         placeholder="Choose a channel...",
         custom_id="channel_select:channel",
         max_values=1,
-        channel_types=[ChannelType.text]
+        channel_types=[ChannelType.text],
     )
     async def choose_channel(self, select: Select, interaction: Interaction):
-        self.value = select.values[0] # type: ignore
+        self.value = select.values[0]  # type: ignore
         await interaction.respond("Got it!", ephemeral=True)
         self.disable_all_items()
         self.stop()
