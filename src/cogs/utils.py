@@ -1,3 +1,4 @@
+from discord.ui.button import Button
 from src.bot import Glyph
 from discord.ext.commands import slash_command, Cog
 from discord import (
@@ -5,10 +6,13 @@ from discord import (
     ApplicationContext,
     Webhook,
     Member,
+    version_info,
 )
-from src.views import VoteButtons
+from src.views import LinkButtons
 from aiohttp import ClientSession
 from discord.commands import option
+from datetime import datetime
+from typing import Optional
 
 
 class Utils(Cog):
@@ -103,13 +107,12 @@ class Utils(Cog):
 
     @slash_command(name="vote", description="Vote for our bot!")
     async def vote(self, ctx: ApplicationContext):
-        print(type(ctx))
         embed = Embed(
             title="Vote for us!",
             description="Vote for us by clicking the button below!",
             color=0xFFFFFF,
         )
-        await ctx.respond(embed=embed, view=VoteButtons())
+        await ctx.respond(embed=embed, view=LinkButtons(Button(label="Vote", url=f"https://top.gg/bot/{self.bot.user.id}/vote")))
 
     @slash_command(name="serverinfo", description="Show's information about the server")
     async def serverinfo(self, ctx: ApplicationContext):
@@ -141,12 +144,17 @@ class Utils(Cog):
     @slash_command(name="info", description="Shows information about the bot")
     async def info(self, ctx: ApplicationContext):
         embed = Embed(
-            title="Information",
-            description="Glyph is a Discord bot created in pycord. It's a moderation and utility bot to make your server better and easier to moderate. It has tons of features for you to use\n- Use this following command for all the commands and how to use them: `help`\n\n**Developers** - <@!536644802595520534> & <@!825803913462284328>\n**Support Server** - https://discord.gg/mxR9xzprNG",
+            title=f"{self.bot.get_custom_emoji('info')} Information",
+            description="Glyph is a Discord bot built with Pycord, designed to enhance your server's moderation and utility. It offers a wide range of features to simplify and improve server management.\n\nUse the `/help` command for information about bot usage and commands.\n\n**Developers** - <@!536644802595520534> & <@!825803913462284328>\n",
             color=0xFFFFFF,
+            timestamp=datetime.now()
+        ).set_footer(
+            text=f"Bot Version: {self.bot.version} • Pycord Version: v{'.'.join(str(x) if x else '0' for x in version_info[:3])}"
+        ).set_author(
+            name="About Glyph",
+            icon_url=self.bot.user.display_avatar.url,
         )
-        embed.add_field(name="Version:", value="v3.1.0")
-        await ctx.respond(embed=embed)
+        await ctx.respond(embed=embed, view=LinkButtons(Button(label="Invite", url="https://discord.gg/mxR9xzprNG")))
 
     @slash_command(name="send", description="Make the bot say anything you want")
     @option(
@@ -199,8 +207,35 @@ class Utils(Cog):
         await ctx.respond(f"API latency: {round(self.bot.latency * 1000)}ms")
 
     @slash_command(name="help", description="Help Command")
-    async def _help(self, ctx: ApplicationContext):
-        embed = Embed(title="Glyph Help", color=0xFFFFFF)
+    @option(
+        name="category",
+        description="The category you want help with",
+        type=str,
+        required=False,
+        choices=[
+            "Fun",
+            "Moderation",
+            "Config",
+            "Utils",
+        ]
+    )
+    async def _help(self, ctx: ApplicationContext, category: Optional[str] = None):
+        if category:
+            cog = self.bot.get_cog(category)
+            if not cog:
+                return await ctx.respond("Invalid category")
+            embed = Embed(
+                title=f"{category} Commands",
+                color=0xFFFFFF,
+            ).set_author(name="Glyph Help", icon_url=self.bot.user.display_avatar.url)
+            for command in cog.get_commands():
+                embed.add_field(
+                    name=command.name,
+                    value=command.description, # type: ignore
+                    inline=False,
+                )
+            return await ctx.respond(embed=embed)
+        embed = Embed(title="Available Commands", description="Use `/help <category>` to see more info on a certain category.", color=0xFFFFFF).set_author(name="Glyph Help", icon_url=self.bot.user.display_avatar.url)
         for name, cog in self.bot.cogs.items():
             if not cog.get_commands() or name.lower() == "jishaku":
                 continue

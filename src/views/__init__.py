@@ -10,15 +10,13 @@ from discord import (
 )
 
 
-class VoteButtons(View):
-    def __init__(self):
+class LinkButtons(View):
+    def __init__(self, *links: Button):
         super().__init__()
-        self.add_item(
-            Button(
-                label="Vote for Glyph (coming soon)",
-                url="https://purplabs.github.io",
+        for link in links:
+            self.add_item(
+                link
             )
-        )
 
 
 class CreateTicket(View):
