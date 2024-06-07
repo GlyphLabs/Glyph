@@ -42,18 +42,18 @@ class Glyph(Bot):
     )
 
     def __init__(
-        self, database_url: Optional[str] = None, test_mode: Optional[bool] = False, emoji_guild: Optional[int] = None, version: str = "0.0.0"
+        self, database_url: Optional[str] = None, debug_guild: Optional[str] = None, emoji_guild: Optional[str] = None, version: str = "0.0.0"
     ):
         self.db: Database
         self.database_url = database_url
-        self.emoji_guild = emoji_guild
+        self.emoji_guild = int(emoji_guild) if emoji_guild else None
         self.custom_emojis: dict[str, Emoji] = {}
         self.version = f"v{version}"
 
         super().__init__(
             command_prefix=when_mentioned,
             intents=Intents(guilds=True, message_content=True, guild_messages=True),
-            debug_guilds=[1247673555462787143] if test_mode else None,
+            debug_guilds=[int(debug_guild)] if debug_guild else None,
             member_cache_flags=MemberCacheFlags.none(),
             max_messages=None,
             chunk_guilds_at_startup=False,

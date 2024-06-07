@@ -10,8 +10,8 @@ load_dotenv()
 
 bot = Glyph(
     database_url=environ.get("DATABASE_URL"),
-    test_mode=bool(int(environ.get("TEST_MODE", 0))),
-    emoji_guild=int(environ.get("EMOJI_GUILD")) if environ.get("EMOJI_GUILD") else None,
+    debug_guild=environ.get("DEBUG_GUILD") ,
+    emoji_guild=environ.get("EMOJI_GUILD"),
     version=pyproject["project"]["version"],
 )
 bot.remove_command("help")
