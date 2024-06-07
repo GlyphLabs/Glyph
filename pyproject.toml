@@ -1,6 +1,6 @@
 [project]
 name = "purpbot"
-version = "3.1.0"
+version = "4.0.0"
 description = "Add your description here"
 authors = [
     { name = "te", email = "thrzl@icloud.com" },
