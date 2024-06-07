@@ -6,6 +6,7 @@ from typing import Optional
 from asyncpg import create_pool, Pool
 from discord import Intents, Game, MemberCacheFlags, HTTPException, Thread
 from discord.abc import GuildChannel, PrivateChannel
+from discord.emoji import Emoji
 from discord.ext.commands import when_mentioned, Bot
 
 from src.db import Database
@@ -36,13 +37,18 @@ class Glyph(Bot):
         "pool",
         "database_url",
         "db",
+        "custom_emojis",
+        "version"
     )
 
     def __init__(
-        self, database_url: Optional[str] = None, test_mode: Optional[bool] = False
+        self, database_url: Optional[str] = None, test_mode: Optional[bool] = False, emoji_guild: Optional[int] = None, version: str = "0.0.0"
     ):
         self.db: Database
         self.database_url = database_url
+        self.emoji_guild = emoji_guild
+        self.custom_emojis: dict[str, Emoji] = {}
+        self.version = f"v{version}"
 
         super().__init__(
             command_prefix=when_mentioned,
@@ -69,6 +75,8 @@ class Glyph(Bot):
         logger.info(f"{len(self.all_commands)} commands across {len(self.cogs)} cogs")
 
         await self.change_presence(activity=Game("/info"))
+        if self.emoji_guild:
+            await self.fetch_emojis()
 
     async def getch_channel(
         self, channel_id: int
@@ -126,3 +134,15 @@ class Glyph(Bot):
                 """)
         self.db = Database(self.pool)
         logger.info("database initialized")
+
+    async def fetch_emojis(self):
+        """Fetch all emojis from all guilds."""
+        guild = await self.fetch_guild(self.emoji_guild)
+        for emoji in guild.emojis:
+            self.custom_emojis[emoji.name] = emoji
+        logger.info(f"fetched {len(self.custom_emojis)} emojis")
+
+    def get_custom_emoji(self, name: str):
+        """Get a custom emoji by name."""
+        return self.custom_emojis.get(name)
+
