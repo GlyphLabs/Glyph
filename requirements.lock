@@ -60,6 +60,8 @@ setuptools==70.0.0
     # via fasttext-wheel
 six==1.16.0
     # via astunparse
+toml==0.10.2
+    # via purpbot
 wheel==0.43.0
     # via astunparse
 yarl==1.9.4

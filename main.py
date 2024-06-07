@@ -1,7 +1,7 @@
 from src.bot import Glyph
 from dotenv import load_dotenv
 from os import environ
-from tomllib import loads
+from toml import loads
 
 with open("pyproject.toml") as f:
     pyproject = loads(str(f.read()))
