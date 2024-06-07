@@ -488,10 +488,20 @@ class Moderation(Cog):
             return
 
         await ctx.defer()
+        category_emoji = {
+            "bot": "add",
+            "integration": "link",
+            "user": "member",
+            "moderation": "moderator",
+            "channel": "channel",
+            "roles": "members",
+            "messages": "forum",
+            "invites": "member_wave",
+        }
 
         after = datetime.now() - timedelta(days=days)
         embed = Embed(
-            title=f"Audit logs for {ctx.guild.name}",
+            title=f"{self.bot.get_custom_emoji('moderator')} Audit Log Summary for {ctx.guild.name}",
             colour=0xFFFFFF,
             timestamp=datetime.now(),
         )
@@ -528,7 +538,7 @@ class Moderation(Cog):
             grouped_events := self.group_audit_events([i for i in event_counts.keys()])
         ):
             embed.add_field(
-                name=category.capitalize(),
+                name=f"{self.bot.get_custom_emoji(category_emoji[category])} {category.capitalize()}",
                 value="\n".join(
                     f"`{event.replace('_', ' ')}` events: {event_counts[event]}"
                     for event in grouped_events[category]
